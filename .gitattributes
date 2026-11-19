@@ -1,0 +1,26 @@
+# 统一换行与二进制判定，避免 Windows/Linux 互相改一大片
+* text=auto eol=lf
+
+# Unity 文本资源（可以走 Smart Merge）
+*.unity text
+*.prefab text
+*.asset text
+*.mat text
+*.anim text
+*.controller text
+*.meta text
+*.cs text
+*.md text
+*.json text
+*.txt text
+
+# 二进制
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.psd binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.exe binary
+*.dll binary

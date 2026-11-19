@@ -104,6 +104,10 @@ GameProgress.Ensure().AddFragment("frag_07");
 
 15 张截图在 [`docs/selftest`](docs/selftest)，日志在 `%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\Player.log`。
 
+## 一起改
+
+想被加成协作者、一起改工程？流程、约定和坑都写在 **[CONTRIBUTING.md](CONTRIBUTING.md)**（Unity 版本、哪些文件别手改、场景冲突怎么办、Smart Merge 配置、自测命令）。
+
 ## 下载
 
 | 包 | 内容 |
