@@ -89,9 +89,9 @@ public static class Level0Builder
         var characters = Group(world, "02_角色");
         var player = BuildPlayer(characters, rig);
 
+        // 物品留给人来添加：拖一个空物体进这个分组，加 CircleCollider2D(Is Trigger) + PickupItem 即可。
+        // 生成器不再摆任何拾取物，免得和关卡设计打架。
         var items = Group(world, "03_物品");
-        BuildPickup(items, "拾取_磁带", 7f, 1.2f, "item_tape", "pickup.tape");
-        BuildPickup(items, "拾取_钥匙", -15f, -5.2f, "item_key", "pickup.key");
 
         var doors = Group(world, "04_门");
         BuildDoor(doors, "门·事件一", 15.0f, 1.3f, 1.2f, 2.6f,
