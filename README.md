@@ -18,9 +18,9 @@
 
 | 出生点 | 事件二的门（锁着） | 事件一完成后的门 |
 | --- | --- | --- |
-| ![出生点](docs/preview/04-spawn.png) | ![锁着的门](docs/selftest/04_door-02-locked.png) | ![解锁后的门](docs/selftest/09_door-02-unlocked.png) |
+| ![出生点](docs/preview/04-spawn.png) | ![锁着的门](docs/selftest/04_door-02-locked.png) | ![解锁后的门](docs/selftest/10_door-02-unlocked.png) |
 
-完整流程截图（14 张）见 `docs/selftest/`。
+完整流程截图（12 张）见 `docs/selftest/`。
 
 ## 快速开始
 
@@ -60,8 +60,6 @@ B1  ── 地面（x -22 … -11）、左墙
 | 玩家（主控） | `(0, 1)` | 默认出生点，`ShelterPlayer.spawnPoint` 可改 |
 | 门·事件一 | `(15, 1.3)` | `eventId = event_01`，没有前置条件 |
 | 门·事件二 | `(-21, -4.7)` | `eventId = event_02`，`requiresEventId = event_01` |
-| 拾取_磁带 | `(7, 1.2)` | `itemId = item_tape`，`storyId = pickup.tape` |
-| 拾取_钥匙 | `(-15, -5.2)` | `itemId = item_key`，`storyId = pickup.key` |
 | 事件登记表 | `05_系统` | `EventCatalog`，id → 场景名 |
 
 门的两种状态：锁着（红色光晕 + `查看` 提示）与解锁（暖色光晕 + `进入` 提示）。解锁条件的唯一来源是 `GameProgress.IsEventCleared(requiresEventId)`，所以任何事件只要调用一次 `Complete()` 就能开锁。
@@ -88,6 +86,19 @@ public class MyEventRoom : EventRoomBase
 
 进度、碎片计数都在 `GameProgress`（`DontDestroyOnLoad`，跨场景保留）；场景切换用 `ShelterFlow`。详细 API 见 [docs/event-integration.md](docs/event-integration.md)。
 
+
+## 物品怎么加
+
+场景里没有预置任何拾取物，位置和种类由关卡负责人自己摆。四步：
+
+1. 在 `Shelter_L0` 的 `World/03_物品` 下新建空物体（名字就是交互提示里显示的名字）
+2. `Layer` 设成 `Interactable`，加 `CircleCollider2D`，勾上 `Is Trigger`，半径 0.6–1.0
+3. 加脚本 `PickupItem`，填三个字段：`itemId`（存档里的键，如 `item_note`）、`storyId`（`story.csv` 里的 id，可留空）、`amount`
+4. 想要显示成方块就加个子物体挂 `SpriteRenderer`（用 `Assets/Whitebox/white.png` + 颜色）；不挂子物体也能交互，只是看不见
+
+想要「只能看、不能拿走」的物件，把第 3 步换成 `StoryInteractable`（同样加 `storyId`）。
+
+> 注意：`工具 / 25小时 / 重建第0层（框架）` 会重新生成 `Shelter_L0`，手摆的物品会被覆盖。手摆之后就别再点重建；要把摆放固化成默认布局，就写进 `Level0Builder.BuildPickup`。
 ## 文案放在哪
 
 所有台词都在 `Assets/Resources/Story/story.csv`，一行一句，同一个 id 写多行就是多句：
@@ -117,7 +128,7 @@ door02.locked,门·事件二,（示例文案）门锁着，先在事件一里把
 | 构建 Windows 试玩版 | 只打包 |
 | 检查文案 | 遍历场景里的 storyId，报告 story.csv 里缺哪些 |
 
-自测（拾取、跳跃、楼梯、两扇门、解锁链，出 14 张图并退出）：
+自测（跳跃、楼梯、两扇门、解锁链，出 12 张图并退出）：
 
 ```powershell
 D:\Unity2D\Build\25Hours\25Hours.exe -selftest -screen-width 1280 -screen-height 720 -screen-fullscreen 0
