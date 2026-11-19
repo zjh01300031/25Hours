@@ -20,13 +20,13 @@
 
 ## 不要手改的部分
 
-- `Assets/Art/`：全部占位图由 `WhiteBoxArt.cs` 生成，手改会在下次重建时丢失。需要换图请改生成脚本，或改用独立目录
+- `Assets/Art/`：只有一块由 `WhiteBoxArt.cs` 生成的白方块 `wb_block.png`，手改会在下次重建时丢失
 - `Assets/Fonts/`：SimHei 为系统字体，不随仓库分发；重建时会自动从系统复制
 - `ProjectSettings/TagManager.asset` 中的层：`8 = Ground`、`9 = Interactable`，新增层请从 10 起
 
 ## 白盒修改流程
 
-1. 修改 `Assets/Editor/Level0Builder.cs`（布局 / 坐标）或 `WhiteBoxArt.cs`（贴图）
+1. 修改 `Assets/Editor/Level0Builder.cs`（物件位置 / 尺寸 / 颜色）
 2. Unity 菜单 `工具 / 25小时 / 重建第0层（白盒）`
 3. 运行自测确认流程正常（见下）
 4. 提交时一并带上场景文件与 `docs/` 下的截图

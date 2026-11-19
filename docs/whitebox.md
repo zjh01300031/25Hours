@@ -50,7 +50,7 @@
 | 文件 | 作用 |
 | --- | --- |
 | `Assets/Editor/Level0Builder.cs` | 生成三个场景、Build Settings、预览图、Windows 包 |
-| `Assets/Editor/WhiteBoxArt.cs` | 生成全部占位贴图，并按 PPU 16 / Point / 无压缩导入 |
+| `Assets/Editor/WhiteBoxArt.cs` | 只生成一块 8×8 白方块 `wb_block`（PPU 16 / Point / 无压缩），并导入中文字体 |
 | `Assets/Editor/WhiteBoxUI.cs` | 代码构建 Canvas、面板、文字、按钮 |
 | `Assets/Editor/WhiteBoxWindow.cs` | 白盒工具箱窗口 |
 
@@ -67,7 +67,8 @@
 - 移动、缩放家具：直接在场景里拖；只有 `01_建筑` 里的物体影响通行
 - 加一块可站立的地面：工具箱 →「在选中物体位置加一块平台」，自动放到 `Ground` 层
 - 对齐：工具箱 → 网格大小 +「把选中物体对齐到网格」
-- 换贴图：`Assets/Art` 下同名文件直接替换；新增贴图后需要把 Import 设置改成 Sprite、PPU 16、Point、No Compression
+- 换美术：所有物件共用一个 `wb_block` 白方块，颜色由 `Level0Builder.TintFor(名字)` 给定；要换正式美术，把物件上的 `SpriteRenderer.sprite` 换成正式图，并把 `sr.color` 设为白色
+- 白盒阶段不产出任何美术资源，`Assets/Art` 里只有 `wb_block.png` 一张
 
 ## 6. 自测
 
