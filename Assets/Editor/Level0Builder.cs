@@ -23,7 +23,7 @@ public static class Level0Builder
     public const string Event02ScenePath = SceneDir + "/Event_02.unity";
     const string BuildDir = "D:/Unity2D/Build/25Hours";
     const string BuildExe = BuildDir + "/25Hours.exe";
-    const string ShotDir = BuildDir + "/预览";
+    const string ShotDir = BuildDir + "/preview";
 
     static int groundLayer = 8;
     static int interactableLayer = 9;
@@ -152,29 +152,17 @@ public static class Level0Builder
         var stateGo = new GameObject("场景状态", typeof(ShelterState));
         stateGo.transform.SetParent(world, false);
         var state = stateGo.GetComponent<ShelterState>();
-        state.warmWallSprite = LoadSprite("back_wall_1f_warm");
+        state.warmTint = new Color(0.62f, 0.50f, 0.36f, 1f);
 
         var architecture = Group(world, "01_建筑");
         var wall1F = BuildArchitecture(architecture);
         state.backWall = wall1F;
 
-        var furniture = Group(world, "02_家具");
-        BuildFurniture(furniture);
-
-        var interactables = Group(world, "03_可交互");
+        var interactables = Group(world, "02_可交互");
         BuildInteractables(interactables, state);
 
-        var characters = Group(world, "04_角色");
+        var characters = Group(world, "03_角色");
         var player = BuildPlayer(characters, rig);
-
-        var lighting = Group(world, "05_灯光");
-        BuildLighting(lighting, state);
-
-        var detail = Group(world, "07_细节");
-        BuildDetail(detail);
-
-        var foreground = Group(world, "08_前景");
-        BuildForeground(foreground);
 
         var systems = Group(world, "06_系统");
         var tester = new GameObject("自测", typeof(ShelterSelfTest));
@@ -254,29 +242,6 @@ public static class Level0Builder
         rampCollider.size = new Vector2(delta.magnitude, 0.3f);
 
         return wall1F;
-    }
-
-    static void BuildFurniture(Transform parent)
-    {
-        // 1F
-        Box(parent, "展柜_台座", 4.4f, 0.15f, 2.0f, 0.3f, "block_mid", 2);
-        Box(parent, "桌子_桌面", 10.2f, 0.86f, 2.2f, 0.12f, "block_mid", 3);
-        Box(parent, "桌子_左腿", 9.25f, 0.38f, 0.12f, 0.76f, "block_dark", 3);
-        Box(parent, "桌子_右腿", 11.15f, 0.38f, 0.12f, 0.76f, "block_dark", 3);
-        Box(parent, "吊架_1F", 6.4f, 4.9f, 3.0f, 0.25f, "block_dark", 2);
-        Box(parent, "吊架_1F_2", 13.6f, 5.4f, 2.4f, 0.25f, "block_dark", 2);
-
-        // B1
-        Box(parent, "工作台", -15.0f, -7.55f, 2.2f, 0.9f, "block_mid", 2);
-        Box(parent, "工作台_台面", -15.0f, -7.05f, 2.4f, 0.12f, "block_light", 3);
-        Box(parent, "床垫", -5.9f, -7.8f, 1.6f, 0.4f, "block_dark", 2);
-        Box(parent, "管道_横", -9.5f, -1.1f, 13.0f, 0.12f, "block_dark", 1);
-        Box(parent, "管道_竖", -14.6f, -3.6f, 0.12f, 4.6f, "block_dark", 1);
-        Box(parent, "挂画", -9.2f, -2.6f, 1.4f, 1.0f, "block_dark", 1);
-
-        // 2 区门口的黑角
-        Backdrop(parent, "2区_暗角", -4.0f, -4.4f, 2.2f, 7.2f, "block_black", -15);
-
     }
 
     static void BuildInteractables(Transform parent, ShelterState state)
@@ -362,6 +327,7 @@ public static class Level0Builder
 
         var sr = go.GetComponent<SpriteRenderer>();
         sr.sprite = LoadSprite("player_red");
+        sr.color = TintFor("player_red");
         sr.sortingOrder = 10;
 
         var rb = go.GetComponent<Rigidbody2D>();
@@ -389,113 +355,6 @@ public static class Level0Builder
 
         rig.target = go.transform;
         return player;
-    }
-
-    static void BuildLighting(Transform parent, ShelterState state)
-    {
-        var lampRoot = new GameObject("1F_顶灯");
-        lampRoot.transform.SetParent(parent, false);
-        lampRoot.transform.position = new Vector3(10.2f, 7.15f, 0f);
-
-        var lamp = new GameObject("灯");
-        lamp.transform.SetParent(lampRoot.transform, false);
-        var lampSr = lamp.AddComponent<SpriteRenderer>();
-        lampSr.sprite = LoadSprite("lamp_off");
-        lampSr.sortingOrder = 6;
-        lamp.transform.localScale = Fit(lampSr.sprite, 0.9f, 0.45f);
-
-        var glow = new GameObject("灯光光晕");
-        glow.transform.SetParent(lampRoot.transform, false);
-        var glowSr = glow.AddComponent<SpriteRenderer>();
-        glowSr.sprite = LoadSprite("glow");
-        glowSr.color = new Color(1f, 0.84f, 0.5f, 0.22f);
-        glowSr.sortingOrder = -6;
-        glow.transform.localScale = new Vector3(8f, 8f, 1f);
-        glow.SetActive(false);
-        state.lampGlow = glow;
-
-        var b1 = new GameObject("B1_吊灯");
-        b1.transform.SetParent(parent, false);
-        b1.transform.position = new Vector3(-10f, -1.1f, 0f);
-        var b1Lamp = new GameObject("灯");
-        b1Lamp.transform.SetParent(b1.transform, false);
-        var b1Sr = b1Lamp.AddComponent<SpriteRenderer>();
-        b1Sr.sprite = LoadSprite("lamp_off");
-        b1Sr.sortingOrder = 3;
-        b1Lamp.transform.localScale = Fit(b1Sr.sprite, 0.8f, 0.4f);
-    }
-
-    /// <summary>细节层：墙裙、墙筋、挂钟、光池、B1 杂物。全部不碰撞，只是让空间「有层次」。</summary>
-    static void BuildDetail(Transform parent)
-    {
-        // ---- 1F 墙面 ----
-        Box(parent, "墙裙_1F", 9.5f, 2.3f, 15f, 0.12f, "block_dark", 1, false);
-
-        float[] ribs = { 6.9f, 11.6f, 13.9f };
-        for (int i = 0; i < ribs.Length; i++)
-        {
-            Box(parent, "墙筋_1F_" + (i + 1), ribs[i], 4.9f, 0.3f, 5.1f, "block_dark", 1, false);
-            Box(parent, "墙筋_1F_受光_" + (i + 1), ribs[i] - 0.13f, 4.9f, 0.06f, 5.1f, "block_mid", 1, false);
-        }
-
-        Box(parent, "横梁_1F", 9.5f, 7.1f, 15f, 0.22f, "block_dark", 1, false);
-
-        // 挂钟：指针停在「第 25 小时」，也是这一层的路标
-        Box(parent, "挂钟", 11.6f, 6.05f, 1.5f, 1.5f, "clock_face", 2, false);
-        Glow(parent, "挂钟_微光", 11.6f, 6.05f, 2.2f, 2.2f, new Color(1f, 0.9f, 0.7f, 0.06f), 1);
-
-        // ---- B1 墙面 ----
-        Box(parent, "墙裙_B1", -10f, -5.0f, 14f, 0.1f, "block_dark", 1, false);
-        Box(parent, "墙筋_B1_1", -12.4f, -4.55f, 0.28f, 6.9f, "block_dark", 1, false);
-        Box(parent, "墙筋_B1_受光_1", -12.53f, -4.55f, 0.06f, 6.9f, "block_mid", 1, false);
-        Box(parent, "墙筋_B1_2", -7.2f, -4.55f, 0.28f, 6.9f, "block_dark", 1, false);
-        Box(parent, "墙筋_B1_受光_2", -7.33f, -4.55f, 0.06f, 6.9f, "block_mid", 1, false);
-
-        // ---- 灯光引导 ----
-        Box(parent, "壁灯_门", 16.2f, 3.4f, 0.55f, 0.16f, "block_mid", 3, false);
-        Glow(parent, "壁灯_门_光", 16.2f, 3.25f, 2.6f, 2.4f, new Color(1f, 0.84f, 0.55f, 0.16f), 2);
-
-        Glow(parent, "灯池_1F_1", 6.4f, 0.2f, 4.6f, 1.5f, new Color(1f, 0.82f, 0.55f, 0.10f), 2);
-        Glow(parent, "灯池_1F_2", 13.6f, 0.2f, 4.2f, 1.4f, new Color(1f, 0.82f, 0.55f, 0.10f), 2);
-        Glow(parent, "灯池_B1", -10f, -7.95f, 4.2f, 1.2f, new Color(1f, 0.78f, 0.5f, 0.08f), 2);
-
-        // ---- 门框（让两扇门读起来像「洞口」而不是一块贴图）----
-        Box(parent, "门框_事件一_左", 15.42f, 1.45f, 0.2f, 2.9f, "block_dark", 2, false);
-        Box(parent, "门框_事件一_右", 16.98f, 1.45f, 0.2f, 2.9f, "block_dark", 2, false);
-        Box(parent, "门框_事件一_上", 16.2f, 2.92f, 1.76f, 0.22f, "block_dark", 2, false);
-
-        Box(parent, "门框_事件二_左", -4.72f, -6.55f, 0.22f, 2.9f, "block_dark", 2, false);
-        Box(parent, "门框_事件二_右", -3.28f, -6.55f, 0.22f, 2.9f, "block_dark", 2, false);
-        Box(parent, "门框_事件二_上", -4.0f, -5.05f, 1.66f, 0.22f, "block_dark", 2, false);
-
-        // ---- B1 杂物 ----
-        Box(parent, "线缆盘", -13.05f, -7.5f, 0.9f, 1.0f, "block_dark", 2, false);
-        Box(parent, "线缆盘_芯", -13.05f, -7.5f, 0.32f, 0.32f, "block_black", 3, false);
-        Box(parent, "挂架_B1", -11.0f, -2.7f, 1.8f, 0.12f, "block_dark", 1, false);
-        Box(parent, "挂架_B1_物", -11.35f, -3.2f, 0.5f, 0.9f, "block_black", 1, false);
-        Box(parent, "木箱_B1", -6.15f, -7.55f, 0.9f, 0.9f, "crate", 2, false);
-        Box(parent, "木箱_B1_上", -6.15f, -6.65f, 0.62f, 0.62f, "crate", 2, false);
-    }
-
-    /// <summary>前景层：压在镜头和角色之间的一层剪影，制造纵深（sortingOrder 30）。</summary>
-    static void BuildForeground(Transform parent)
-    {
-        Box(parent, "前景_顶梁", 9.5f, 7.42f, 15.6f, 0.55f, "block_black", 30, false);
-        Box(parent, "前景_右框", 17.05f, 3.4f, 0.5f, 8.4f, "block_black", 30, false);
-        Box(parent, "前景_悬线", 4.2f, 6.6f, 0.08f, 1.6f, "block_black", 30, false);
-        Box(parent, "前景_悬线_2", 14.9f, 6.7f, 0.08f, 1.4f, "block_black", 30, false);
-    }
-
-    static void Glow(Transform parent, string name, float cx, float cy, float w, float h, Color color, int order)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        go.transform.position = new Vector3(cx, cy, 0f);
-        go.transform.localScale = new Vector3(w, h, 1f);
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = LoadSprite("glow");
-        sr.color = color;
-        sr.sortingOrder = order;
     }
 
     static void BuildUI(ShelterPlayer player)
@@ -624,6 +483,35 @@ public static class Level0Builder
         return new Vector3(width / Mathf.Max(0.001f, size.x), height / Mathf.Max(0.001f, size.y), 1f);
     }
 
+
+    /// <summary>白盒只用一块白方块，靠颜色区分物件性质。</summary>
+    static Color TintFor(string spriteName)
+    {
+        switch (spriteName)
+        {
+            case "block_light": return new Color(0.72f, 0.74f, 0.77f);
+            case "block_mid": return new Color(0.52f, 0.54f, 0.58f);
+            case "block_dark": return new Color(0.33f, 0.35f, 0.39f);
+            case "block_stair": return new Color(0.40f, 0.42f, 0.46f);
+            case "block_black": return new Color(0.16f, 0.17f, 0.19f);
+            case "back_wall_stair": return new Color(0.24f, 0.26f, 0.30f);
+            case "back_wall_b1": return new Color(0.26f, 0.28f, 0.32f);
+            case "back_wall_1f": return new Color(0.27f, 0.29f, 0.33f);
+            case "back_wall_earth": return new Color(0.14f, 0.15f, 0.17f);
+            case "player_red": return new Color(0.85f, 0.25f, 0.22f);
+            case "npc_doll": return new Color(0.45f, 0.60f, 0.90f);
+            case "item_glow": return new Color(0.95f, 0.80f, 0.45f);
+            case "door_locked": return new Color(0.55f, 0.50f, 0.42f);
+            case "door_event": return new Color(0.85f, 0.75f, 0.50f);
+            case "crate": return new Color(0.60f, 0.52f, 0.42f);
+            case "cabinet": return new Color(0.60f, 0.52f, 0.42f);
+            case "display_case": return new Color(0.62f, 0.66f, 0.70f);
+            case "ui_panel": return new Color(0.10f, 0.11f, 0.13f, 0.95f);
+            case "ui_white": return Color.white;
+            default: return new Color(0.65f, 0.66f, 0.68f);
+        }
+    }
+
     static GameObject Backdrop(Transform parent, string name, float cx, float cy, float w, float h, string sprite, int order = -20)
     {
         return Box(parent, name, cx, cy, w, h, sprite, order, false, 0);
@@ -638,6 +526,7 @@ public static class Level0Builder
         var sprite = LoadSprite(spriteName);
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = sprite;
+        sr.color = TintFor(spriteName);
         sr.sortingOrder = order;
         go.transform.localScale = Fit(sprite, w, h);
 
@@ -657,6 +546,7 @@ public static class Level0Builder
         visual.transform.SetParent(root.transform, false);
         var sr = visual.AddComponent<SpriteRenderer>();
         sr.sprite = LoadSprite(spriteName);
+        sr.color = TintFor(spriteName);
         sr.sortingOrder = order;
         visual.transform.localScale = Fit(sr.sprite, w, h);
 
@@ -721,11 +611,11 @@ public static class Level0Builder
         Directory.CreateDirectory(ShotDir);
         var original = cam.transform.position;
 
-        Shot(cam, new Vector3(9.5f, 3.0f, -10f), ShotDir + "/01_避难所1F.png");
-        Shot(cam, new Vector3(0.5f, -0.6f, -10f), ShotDir + "/02_楼梯与2区.png");
-        Shot(cam, new Vector3(-10.0f, -4.4f, -10f), ShotDir + "/03_避难所B1.png");
+        Shot(cam, new Vector3(9.5f, 3.0f, -10f), ShotDir + "/01-floor-1f.png");
+        Shot(cam, new Vector3(0.5f, -0.6f, -10f), ShotDir + "/02-stairs.png");
+        Shot(cam, new Vector3(-10.0f, -4.4f, -10f), ShotDir + "/03-floor-b1.png");
         // 出生机位：用来对照游戏里实际看到的第一屏
-        Shot(cam, new Vector3(3.4f, 2.6f, -10f), ShotDir + "/04_出生机位.png");
+        Shot(cam, new Vector3(3.4f, 2.6f, -10f), ShotDir + "/04-spawn-camera.png");
 
         cam.transform.position = original;
         Debug.Log("[25Hours] 预览图：" + ShotDir);

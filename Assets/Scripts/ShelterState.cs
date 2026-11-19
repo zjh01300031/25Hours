@@ -12,7 +12,7 @@ public class ShelterState : MonoBehaviour
     public GameObject lampGlow;
     public GameObject newDoll;
     public SpriteRenderer backWall;
-    public Sprite warmWallSprite;
+    public Color warmTint = new Color(0.62f, 0.50f, 0.36f, 1f);
 
     void Start()
     {
@@ -21,7 +21,7 @@ public class ShelterState : MonoBehaviour
 
         if (lampGlow != null) lampGlow.SetActive(true);
         if (newDoll != null) newDoll.SetActive(true);
-        if (backWall != null && warmWallSprite != null) backWall.sprite = warmWallSprite;
+        if (backWall != null) backWall.color = warmTint;
         if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("事件完成 · 展柜里多了一个人偶");
     }
 }
