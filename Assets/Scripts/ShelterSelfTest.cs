@@ -1,11 +1,12 @@
 using System.Collections;
 using System.IO;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 自动验收：只有命令行带 -selftest 才会跑。
-/// 流程：出生 → 跳一下 → 下楼梯到 B1 → 试事件二的门（锁着）→ 进事件一 → 完成回避难所 →
-///       事件二的门解锁 → 进事件二 → 完成回避难所。
+/// 流程：出生 → 捡磁带（看文案）→ 跳 → 下楼梯 → 捡钥匙 → 试事件二的门（锁着）→ 进事件一 →
+///       完成回避难所 → 事件二门解锁 → 进事件二 → 完成回避难所。
 /// 坐标打到 Player.log（%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\Player.log），
 /// 截图存到 D:/Unity2D/Build/25Hours/selftest。平时正常启动什么都不做。
 /// </summary>
@@ -50,7 +51,18 @@ public class ShelterSelfTest : MonoBehaviour
         Log("出生", player);
         yield return Shot("01_spawn");
 
-        // 平地跳一下，确认没被地面判定卡住
+        // ---- 物品交互 1：磁带（有文案就弹对话）----
+        player.Teleport(new Vector3(6.4f, 1f, 0f));
+        yield return new WaitForSeconds(1.0f);
+        if (interactor != null) interactor.ForceInteract("拾取_磁带");
+        yield return new WaitForSeconds(0.8f);
+        yield return Shot("02_pickup-tape");
+        CloseDialogue();
+        yield return new WaitForSeconds(0.4f);
+
+        // ---- 跳跃：平地 / 斜坡 ----
+        player.Teleport(new Vector3(0f, 1f, 0f));
+        yield return new WaitForSeconds(0.6f);
         {
             float startY = player.transform.position.y;
             player.ForceJump();
@@ -64,7 +76,6 @@ public class ShelterSelfTest : MonoBehaviour
                 startY, peak, peak - startY, player.IsGrounded));
         }
 
-        // 楼梯斜坡上跳一下
         player.Teleport(new Vector3(-8.5f, -3.2f, 0f));
         yield return new WaitForSeconds(0.9f);
         {
@@ -82,37 +93,52 @@ public class ShelterSelfTest : MonoBehaviour
                 peak, peak - startY, player.IsGrounded));
         }
 
-        // 走楼梯下去
+        // ---- 走楼梯下去 ----
         player.Teleport(new Vector3(-4.5f, 1f, 0f));
         yield return new WaitForSeconds(0.6f);
         Log("向左下楼梯", player);
         player.AutoMove = -1f;
         yield return new WaitForSeconds(1.3f);
-        yield return Shot("02_stairs");
+        yield return Shot("03_stairs");
         yield return new WaitForSeconds(2.2f);
         player.AutoMove = 0f;
         yield return new WaitForSeconds(0.4f);
         Log("到达 B1", player);
-        yield return Shot("03_floor-b1");
+        yield return Shot("04_floor-b1");
 
-        // 事件二的门：现在锁着
+        // ---- 物品交互 2：钥匙 ----
+        player.Teleport(new Vector3(-15f, -5.4f, 0f));
+        yield return new WaitForSeconds(1.0f);
+        if (interactor != null) interactor.ForceInteract("拾取_钥匙");
+        yield return new WaitForSeconds(0.8f);
+        yield return Shot("05_pickup-key");
+        CloseDialogue();
+        yield return new WaitForSeconds(0.4f);
+
+        // ---- 事件二的门：现在锁着 ----
         player.Teleport(new Vector3(-19.8f, -4.6f, 0f));
-        yield return new WaitForSeconds(1.2f);
+        yield return new WaitForSeconds(1.0f);
         Log("事件二门前", player);
-        yield return Shot("04_door-02-locked");
+        yield return Shot("06_door-02-locked");
         if (interactor != null) interactor.ForceInteract("门·事件二");
         yield return new WaitForSeconds(0.8f);
-        yield return Shot("05_door-02-locked-interact");
+        yield return Shot("07_door-02-locked-text");
+        CloseDialogue();
+        yield return new WaitForSeconds(0.6f);
 
-        // 事件一：进去、完成
+        // ---- 事件一：看文案 → 进场景 → 完成 ----
         player.Teleport(new Vector3(13.8f, 1f, 0f));
-        yield return new WaitForSeconds(1.2f);
+        yield return new WaitForSeconds(1.0f);
         Log("事件一门前", player);
-        yield return Shot("06_door-01");
-
+        yield return Shot("08_door-01");
         if (interactor != null) interactor.ForceInteract("门·事件一");
-        yield return new WaitForSeconds(2.0f);
-        yield return Shot("07_event-01-room");
+        yield return new WaitForSeconds(0.8f);
+        yield return Shot("09_door-01-text");
+        CloseDialogue();
+
+        yield return WaitScene(SceneNames.Event01, 4f);
+        yield return new WaitForSeconds(1.0f);
+        yield return Shot("10_event-01-room");
 
         var room = FindObjectOfType<EventRoomBase>();
         if (room != null)
@@ -124,21 +150,31 @@ public class ShelterSelfTest : MonoBehaviour
         {
             Debug.LogWarning("[自测] 事件场景里没找到 EventRoomBase");
         }
-        yield return new WaitForSeconds(2.4f);
 
         var back = FindObjectOfType<ShelterPlayer>();
         var backInteractor = FindObjectOfType<ShelterInteractor>();
-        Log("从事件一回到避难所", back);
-        yield return Shot("08_back-from-event-01");
-
-        // 事件二的门：应该解锁了
-        if (back != null) back.Teleport(new Vector3(-19.8f, -4.6f, 0f));
+        yield return WaitScene(SceneNames.ShelterL0, 5f);
         yield return new WaitForSeconds(1.2f);
-        yield return Shot("09_door-02-unlocked");
 
-        if (backInteractor != null) backInteractor.ForceInteract("门·事件二");
-        yield return new WaitForSeconds(2.0f);
-        yield return Shot("10_event-02-room");
+        back = FindObjectOfType<ShelterPlayer>();
+        backInteractor = FindObjectOfType<ShelterInteractor>();
+        Log("从事件一回到避难所", back);
+        yield return Shot("11_back-from-event-01");
+
+        // ---- 事件二的门：应该解锁了 ----
+        if (back != null)
+        {
+            back.Teleport(new Vector3(-19.8f, -4.6f, 0f));
+            yield return new WaitForSeconds(1.0f);
+            yield return Shot("12_door-02-unlocked");
+            if (backInteractor != null) backInteractor.ForceInteract("门·事件二");
+            yield return new WaitForSeconds(0.8f);
+            CloseDialogue();
+        }
+
+        yield return WaitScene(SceneNames.Event02, 4f);
+        yield return new WaitForSeconds(1.0f);
+        yield return Shot("13_event-02-room");
 
         var room2 = FindObjectOfType<EventRoomBase>();
         if (room2 != null)
@@ -146,14 +182,29 @@ public class ShelterSelfTest : MonoBehaviour
             Debug.Log("[自测] 事件二 eventId=" + room2.EventId + "，调用 Complete()");
             room2.Complete();
         }
-        yield return new WaitForSeconds(2.4f);
 
-        var last = FindObjectOfType<ShelterPlayer>();
-        Log("两个事件都完成，回到避难所", last);
-        yield return Shot("11_done");
+        yield return WaitScene(SceneNames.ShelterL0, 5f);
+        yield return new WaitForSeconds(1.2f);
+        Log("两个事件都完成，回到避难所", FindObjectOfType<ShelterPlayer>());
+        yield return Shot("14_done");
 
         yield return new WaitForSeconds(0.4f);
         Application.Quit();
+    }
+
+    void CloseDialogue()
+    {
+        if (ShelterDialogue.Instance != null) ShelterDialogue.Instance.Close();
+    }
+
+    IEnumerator WaitScene(string sceneName, float timeout)
+    {
+        float start = Time.realtimeSinceStartup;
+        while (SceneManager.GetActiveScene().name != sceneName && Time.realtimeSinceStartup - start < timeout)
+        {
+            yield return null;
+        }
+        yield return null;
     }
 
     IEnumerator Shot(string name)

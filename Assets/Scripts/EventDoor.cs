@@ -27,6 +27,14 @@ public class EventDoor : InteractableBase
     [Tooltip("登记表里没有 / 场景没进 Build Settings 时说的话")]
     public string[] missingLines;
 
+    [Header("文案 id（优先于上面的数组，内容在 Resources/Story/story.csv）")]
+    [Tooltip("进门前播的文案 id")]
+    public string enterStoryId;
+    [Tooltip("门锁着时播的文案 id")]
+    public string lockedStoryId;
+    [Tooltip("事件做完以后再碰门播的文案 id")]
+    public string clearedStoryId;
+
     [Header("门的样子")]
     [Tooltip("真正显示门的那张图的 SpriteRenderer（留空会自动在子物体里找「图」）")]
     public SpriteRenderer doorRenderer;
@@ -95,30 +103,33 @@ public class EventDoor : InteractableBase
     {
         if (IsLocked)
         {
-            ShowLines(lockedLines);
+            PlayText(lockedStoryId, lockedLines);
             if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("门锁着 · 要先完成前置事件");
             return;
         }
 
         if (GameProgress.Ensure().IsEventCleared(eventId))
         {
-            ShowLines(clearedLines);
+            PlayText(clearedStoryId, clearedLines);
             return;
         }
 
         string scene = ResolveScene();
         if (string.IsNullOrEmpty(scene))
         {
-            ShowLines(missingLines);
+            PlayText(null, missingLines);
             if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("（这扇门后面还没接事件）");
             return;
         }
 
         ShelterFlow.RememberShelterPosition(player != null ? player.transform.position : transform.position);
 
-        if (enterLines != null && enterLines.Length > 0)
+        bool hasEnterText = (!string.IsNullOrEmpty(enterStoryId) && Story.Has(enterStoryId))
+                            || (enterLines != null && enterLines.Length > 0);
+
+        if (hasEnterText)
         {
-            ShowLines(enterLines);
+            PlayText(enterStoryId, enterLines);
             pendingScene = scene;
         }
         else
@@ -137,6 +148,17 @@ public class EventDoor : InteractableBase
         }
 
         return null;
+    }
+
+    void PlayText(string storyId, string[] lines)
+    {
+        if (!string.IsNullOrEmpty(storyId) && Story.Has(storyId) && ShelterDialogue.Instance != null)
+        {
+            ShelterDialogue.Instance.Show(Story.Speaker(storyId), Story.Lines(storyId));
+            return;
+        }
+
+        ShowLines(lines);
     }
 
     void ShowLines(string[] lines)

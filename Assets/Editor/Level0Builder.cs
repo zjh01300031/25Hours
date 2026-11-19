@@ -19,6 +19,8 @@ public static class Level0Builder
     public const string BuildDir = "D:/Unity2D/Build/25Hours";
     public const string ShotDir = BuildDir + "/preview";
     public const string BuildExe = BuildDir + "/25Hours.exe";
+    public const string StoryDir = "Assets/Resources/Story";
+    public const string StoryPath = StoryDir + "/story.csv";
 
     const int GroundLayer = 8;
     const int InteractableLayer = 9;
@@ -40,6 +42,7 @@ public static class Level0Builder
     {
         EnsureFolder(SceneDir);
         WhiteBoxArt.Prepare();
+        EnsureStoryCsv();
         WhiteBoxUI.Load();
         SetupLayers();
         SetupProjectSettings();
@@ -86,12 +89,18 @@ public static class Level0Builder
         var characters = Group(world, "02_角色");
         var player = BuildPlayer(characters, rig);
 
-        var doors = Group(world, "03_门");
-        BuildDoor(doors, "门·事件一", 15.0f, 1.3f, 1.2f, 2.6f, "event_01", null);
-        BuildDoor(doors, "门·事件二", -21.0f, -4.7f, 1.2f, 2.6f, "event_02", "event_01");
+        var items = Group(world, "03_物品");
+        BuildPickup(items, "拾取_磁带", 7f, 1.2f, "item_tape", "pickup.tape");
+        BuildPickup(items, "拾取_钥匙", -15f, -5.2f, "item_key", "pickup.key");
+
+        var doors = Group(world, "04_门");
+        BuildDoor(doors, "门·事件一", 15.0f, 1.3f, 1.2f, 2.6f,
+            "event_01", null, "door01.enter", null, "door01.cleared");
+        BuildDoor(doors, "门·事件二", -21.0f, -4.7f, 1.2f, 2.6f,
+            "event_02", "event_01", "door02.enter", "door02.locked", null);
 
         // 事件登记表：id → 场景名。加事件就在 Inspector 里加一条。
-        var systems = Group(world, "04_系统");
+        var systems = Group(world, "05_系统");
         var catalogGo = new GameObject("事件登记表", typeof(EventCatalog));
         catalogGo.transform.SetParent(systems, false);
         var catalog = catalogGo.GetComponent<EventCatalog>();
@@ -180,7 +189,8 @@ public static class Level0Builder
         return player;
     }
 
-    static EventDoor BuildDoor(Transform parent, string name, float cx, float cy, float w, float h, string eventId, string requiresEventId)
+    static EventDoor BuildDoor(Transform parent, string name, float cx, float cy, float w, float h,
+        string eventId, string requiresEventId, string enterStoryId, string lockedStoryId, string clearedStoryId)
     {
         var root = new GameObject(name);
         root.transform.SetParent(parent, false);
@@ -200,9 +210,32 @@ public static class Level0Builder
         door.verb = "进入";
         door.eventId = eventId;
         door.requiresEventId = requiresEventId;
+        door.enterStoryId = enterStoryId;
+        door.lockedStoryId = lockedStoryId;
+        door.clearedStoryId = clearedStoryId;
         door.doorRenderer = sr;
         door.statusGlow = glowSr;
         return door;
+    }
+
+    static PickupItem BuildPickup(Transform parent, string name, float cx, float cy, string itemId, string storyId)
+    {
+        var root = new GameObject(name);
+        root.transform.SetParent(parent, false);
+        root.transform.position = new Vector3(cx, cy, 0f);
+        root.layer = InteractableLayer;
+
+        Visual(root.transform, new Color(0.95f, 0.82f, 0.45f), 0.5f, 0.5f, 6);
+
+        var trigger = root.AddComponent<CircleCollider2D>();
+        trigger.isTrigger = true;
+        trigger.radius = 0.9f;
+
+        var item = root.AddComponent<PickupItem>();
+        item.displayName = name;
+        item.itemId = itemId;
+        item.storyId = storyId;
+        return item;
     }
 
     // ------------------------------------------------------------------
@@ -324,7 +357,79 @@ public static class Level0Builder
 
     static void EnsureFolder(string path)
     {
-        if (!AssetDatabase.IsValidFolder(path)) AssetDatabase.CreateFolder("Assets", Path.GetFileName(path));
+        if (AssetDatabase.IsValidFolder(path)) return;
+
+        var parts = path.Split('/');
+        string current = parts[0];
+        for (int i = 1; i < parts.Length; i++)
+        {
+            string next = current + "/" + parts[i];
+            if (!AssetDatabase.IsValidFolder(next)) AssetDatabase.CreateFolder(current, parts[i]);
+            current = next;
+        }
+    }
+
+    static void EnsureStoryCsv()
+    {
+        EnsureFolder("Assets/Resources");
+        EnsureFolder(StoryDir);
+
+        if (File.Exists(StoryPath)) return;
+
+        const string content =
+            "id,speaker,text\n" +
+            "door01.enter,门·事件一,（示例文案）东边这扇门通向事件一。\n" +
+            "door01.cleared,门·事件一,（示例文案）事件一已经走过一次了。\n" +
+            "door02.locked,门·事件二,（示例文案）门锁着，先在事件一里把那摊事做完。\n" +
+            "door02.enter,门·事件二,（示例文案）锁开了，门后面是事件二。\n" +
+            "pickup.tape,磁带,（示例文案）一盒没有标签的磁带，标签被人撕掉了。\n" +
+            "pickup.key,钥匙,（示例文案）一把锈掉的钥匙，不知道开哪扇门。\n";
+
+        File.WriteAllText(StoryPath, content, new System.Text.UTF8Encoding(false));
+        AssetDatabase.ImportAsset(StoryPath, ImportAssetOptions.ForceUpdate);
+        Debug.Log("[25Hours] 已生成文案表：" + StoryPath);
+    }
+
+    [MenuItem("工具/25小时/检查文案", false, 40)]
+    public static void CheckStory()
+    {
+        Story.Reload();
+
+        if (!File.Exists(ShelterScenePath))
+        {
+            Debug.LogWarning("[25Hours] 还没有 Shelter_L0 场景，先重建一次");
+            return;
+        }
+
+        EditorSceneManager.OpenScene(ShelterScenePath);
+
+        int missing = 0;
+        foreach (var door in Object.FindObjectsOfType<EventDoor>())
+        {
+            missing += Report(door.displayName + ".enterStoryId", door.enterStoryId);
+            missing += Report(door.displayName + ".lockedStoryId", door.lockedStoryId);
+            missing += Report(door.displayName + ".clearedStoryId", door.clearedStoryId);
+        }
+        foreach (var item in Object.FindObjectsOfType<PickupItem>())
+        {
+            missing += Report(item.displayName + ".storyId", item.storyId);
+        }
+        foreach (var prop in Object.FindObjectsOfType<StoryInteractable>())
+        {
+            missing += Report(prop.displayName + ".storyId", prop.storyId);
+        }
+
+        if (missing == 0) Debug.Log("[25Hours] 文案齐全，一共 " + Story.Count + " 段");
+        else Debug.LogWarning("[25Hours] 有 " + missing + " 个文案 id 在 story.csv 里找不到，运行时会走占位提示");
+    }
+
+    static int Report(string owner, string storyId)
+    {
+        if (string.IsNullOrEmpty(storyId)) return 0;
+        if (Story.Has(storyId)) return 0;
+
+        Debug.LogWarning("[25Hours] 缺文案：" + owner + " = " + storyId);
+        return 1;
     }
 
     static void SetupLayers()
