@@ -1,7 +1,7 @@
-# 统一换行与二进制判定，避免 Windows/Linux 互相改一大片
+# 统一换行与二进制判定，避免 Windows / Linux 互相改一大片
 * text=auto eol=lf
 
-# Unity 文本资源（可以走 Smart Merge）
+# Unity 文本资源（可走 Smart Merge）
 *.unity text
 *.prefab text
 *.asset text
