@@ -3,11 +3,11 @@ using System.IO;
 using UnityEngine;
 
 /// <summary>
-/// 自动验收：只有在命令行带 -selftest 启动时才会跑。
-/// 流程：出生 → 走下楼梯到 B1 → 看回声匣（只对话）→ 试事件二的门（锁着）→ 进事件一（事件场景）→
-///       完成返回 → 事件二的门解锁 → 进事件二 → 完成返回 → 回 1F 看展柜里的两个人偶。
-/// 每步把坐标打到 Player.log（路径：%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\Player.log），
-/// 截图存到 D:/Unity2D/Build/25Hours/selftest。平时正常启动这个脚本什么都不做。
+/// 自动验收：只有命令行带 -selftest 才会跑。
+/// 流程：出生 → 跳一下 → 下楼梯到 B1 → 试事件二的门（锁着）→ 进事件一 → 完成回避难所 →
+///       事件二的门解锁 → 进事件二 → 完成回避难所。
+/// 坐标打到 Player.log（%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\Player.log），
+/// 截图存到 D:/Unity2D/Build/25Hours/selftest。平时正常启动什么都不做。
 /// </summary>
 public class ShelterSelfTest : MonoBehaviour
 {
@@ -46,11 +46,11 @@ public class ShelterSelfTest : MonoBehaviour
         var player = FindObjectOfType<ShelterPlayer>();
         var interactor = FindObjectOfType<ShelterInteractor>();
 
-        yield return new WaitForSeconds(1.5f);
+        yield return new WaitForSeconds(1.2f);
         Log("出生", player);
         yield return Shot("01_spawn");
 
-        // ---- 跳跃自检 1：平地 ----
+        // 平地跳一下，确认没被地面判定卡住
         {
             float startY = player.transform.position.y;
             player.ForceJump();
@@ -60,85 +60,59 @@ public class ShelterSelfTest : MonoBehaviour
                 yield return new WaitForFixedUpdate();
                 if (player.transform.position.y > peak) peak = player.transform.position.y;
             }
-            Debug.Log(string.Format("[自测] 平地跳跃：起跳 y={0:F2}，最高 y={1:F2}（升 {2:F2}），落地 y={3:F2} grounded={4}",
-                startY, peak, peak - startY, player.transform.position.y, player.IsGrounded));
+            Debug.Log(string.Format("[自测] 平地跳跃：起跳 y={0:F2}，最高 y={1:F2}（升 {2:F2}），落地 grounded={3}",
+                startY, peak, peak - startY, player.IsGrounded));
         }
 
-        // ---- 跳跃自检 2：楼梯斜坡上（最容易「卡住」的地方）----
-        player.Teleport(new Vector3(-0.5f, -2.2f, 0f));
+        // 楼梯斜坡上跳一下
+        player.Teleport(new Vector3(-8.5f, -3.2f, 0f));
         yield return new WaitForSeconds(0.9f);
         {
             float startY = player.transform.position.y;
             Debug.Log(string.Format("[自测] 斜坡起跳前：y={0:F2} grounded={1} vy={2:F2}",
                 startY, player.IsGrounded, player.Velocity.y));
             player.ForceJump();
-            yield return new WaitForFixedUpdate();
-            Debug.Log(string.Format("[自测] 斜坡跳后1帧：y={0:F2} grounded={1} vy={2:F2}",
-                player.transform.position.y, player.IsGrounded, player.Velocity.y));
-            float peak = player.transform.position.y;
+            float peak = startY;
             for (int i = 0; i < 80; i++)
             {
                 yield return new WaitForFixedUpdate();
                 if (player.transform.position.y > peak) peak = player.transform.position.y;
             }
-            Debug.Log(string.Format("[自测] 斜坡跳跃：落点 y={0:F2}，最高 y={1:F2}（升 {2:F2}），结束 y={3:F2} grounded={4}",
-                startY, peak, peak - startY, player.transform.position.y, player.IsGrounded));
+            Debug.Log(string.Format("[自测] 斜坡跳跃：最高 y={0:F2}（升 {1:F2}），结束 grounded={2}",
+                peak, peak - startY, player.IsGrounded));
         }
-        player.Teleport(new Vector3(2.6f, 0.9f, 0f));
-        yield return new WaitForSeconds(0.4f);
 
+        // 走楼梯下去
+        player.Teleport(new Vector3(-4.5f, 1f, 0f));
+        yield return new WaitForSeconds(0.6f);
         Log("向左下楼梯", player);
         player.AutoMove = -1f;
-        yield return new WaitForSeconds(1.6f);
-        yield return Shot("02_stairs-descending");
-        yield return new WaitForSeconds(1.8f);
-        yield return Shot("03_b1-arrive");
-        Log("B1", player);
+        yield return new WaitForSeconds(1.3f);
+        yield return Shot("02_stairs");
+        yield return new WaitForSeconds(2.2f);
         player.AutoMove = 0f;
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.4f);
+        Log("到达 B1", player);
+        yield return Shot("03_floor-b1");
 
-        Log("向左走到B1尽头", player);
-        player.AutoMove = -1f;
-        yield return new WaitForSeconds(1.0f);
-        player.AutoMove = 0f;
-        yield return Shot("04_b1-middle");
-        Log("B1中段", player);
-
-        // ---- 回声匣：只对话，不进事件 ----
-        Log("传送到回声匣旁", player);
-        player.Teleport(new Vector3(11.3f, 0.8f, 0f));
-        yield return new WaitForSeconds(1.4f);
-        yield return Shot("05_echo-box");
-
-        if (interactor != null) interactor.ForceInteract("回声匣");
-        yield return new WaitForSeconds(1.0f);
-        yield return Shot("06_echo-box-interact");
-        if (ShelterDialogue.Instance != null) ShelterDialogue.Instance.Close();
-        yield return new WaitForSeconds(0.6f);
-
-        // ---- 事件二的门：现在应该锁着 ----
-        Log("传送到事件二门前", player);
-        player.Teleport(new Vector3(-2.6f, -7.2f, 0f));
-        yield return new WaitForSeconds(1.4f);
-        yield return Shot("07_door-02-locked");
-
-        if (interactor != null) interactor.ForceInteract("事件二");
-        yield return new WaitForSeconds(1.0f);
-        yield return Shot("08_door-02-locked-interact");
-        if (ShelterDialogue.Instance != null) ShelterDialogue.Instance.Close();
-        yield return new WaitForSeconds(0.6f);
-
-        // ---- 事件一：进去、完成 ----
-        Log("传送到事件一门前", player);
-        player.Teleport(new Vector3(14.6f, 0.8f, 0f));
+        // 事件二的门：现在锁着
+        player.Teleport(new Vector3(-19.8f, -4.6f, 0f));
         yield return new WaitForSeconds(1.2f);
-        yield return Shot("09_door-01-front");
+        Log("事件二门前", player);
+        yield return Shot("04_door-02-locked");
+        if (interactor != null) interactor.ForceInteract("门·事件二");
+        yield return new WaitForSeconds(0.8f);
+        yield return Shot("05_door-02-locked-interact");
 
-        if (interactor != null) interactor.ForceInteract("事件一");
-        yield return new WaitForSeconds(1.0f);
-        if (ShelterDialogue.Instance != null) ShelterDialogue.Instance.Close();
+        // 事件一：进去、完成
+        player.Teleport(new Vector3(13.8f, 1f, 0f));
+        yield return new WaitForSeconds(1.2f);
+        Log("事件一门前", player);
+        yield return Shot("06_door-01");
+
+        if (interactor != null) interactor.ForceInteract("门·事件一");
         yield return new WaitForSeconds(2.0f);
-        yield return Shot("10_event-01-room");
+        yield return Shot("07_event-01-room");
 
         var room = FindObjectOfType<EventRoomBase>();
         if (room != null)
@@ -150,23 +124,21 @@ public class ShelterSelfTest : MonoBehaviour
         {
             Debug.LogWarning("[自测] 事件场景里没找到 EventRoomBase");
         }
-        yield return new WaitForSeconds(2.2f);
+        yield return new WaitForSeconds(2.4f);
 
         var back = FindObjectOfType<ShelterPlayer>();
         var backInteractor = FindObjectOfType<ShelterInteractor>();
         Log("从事件一回到避难所", back);
-        yield return Shot("11_event-01-cleared");
+        yield return Shot("08_back-from-event-01");
 
-        // ---- 事件二的门：应该已经解锁 ----
-        if (back != null) back.Teleport(new Vector3(-2.6f, -7.2f, 0f));
-        yield return new WaitForSeconds(1.4f);
-        yield return Shot("12_door-02-unlocked");
+        // 事件二的门：应该解锁了
+        if (back != null) back.Teleport(new Vector3(-19.8f, -4.6f, 0f));
+        yield return new WaitForSeconds(1.2f);
+        yield return Shot("09_door-02-unlocked");
 
-        if (backInteractor != null) backInteractor.ForceInteract("事件二");
-        yield return new WaitForSeconds(1.0f);
-        if (ShelterDialogue.Instance != null) ShelterDialogue.Instance.Close();
+        if (backInteractor != null) backInteractor.ForceInteract("门·事件二");
         yield return new WaitForSeconds(2.0f);
-        yield return Shot("13_event-02-room");
+        yield return Shot("10_event-02-room");
 
         var room2 = FindObjectOfType<EventRoomBase>();
         if (room2 != null)
@@ -174,17 +146,13 @@ public class ShelterSelfTest : MonoBehaviour
             Debug.Log("[自测] 事件二 eventId=" + room2.EventId + "，调用 Complete()");
             room2.Complete();
         }
-        yield return new WaitForSeconds(2.2f);
+        yield return new WaitForSeconds(2.4f);
 
         var last = FindObjectOfType<ShelterPlayer>();
-        Log("从事件二回到避难所", last);
-        yield return Shot("14_events-cleared");
+        Log("两个事件都完成，回到避难所", last);
+        yield return Shot("11_done");
 
-        if (last != null) last.Teleport(new Vector3(6.2f, 0.8f, 0f));
-        yield return new WaitForSeconds(1.4f);
-        yield return Shot("15_display-case-two-dolls");
-
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.4f);
         Application.Quit();
     }
 
@@ -199,7 +167,7 @@ public class ShelterSelfTest : MonoBehaviour
         string path = Path.Combine(ShotDir, name + ".png");
         File.WriteAllBytes(path, bytes);
         Debug.Log("[自测] 截图 -> " + path);
-        yield return new WaitForSeconds(0.4f);
+        yield return new WaitForSeconds(0.3f);
     }
 
     void Log(string tag, ShelterPlayer p)

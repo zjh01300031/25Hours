@@ -12,12 +12,10 @@ public static class WhiteBoxUI
     public static void Load()
     {
         Font = AssetDatabase.LoadAssetAtPath<Font>(WhiteBoxArt.FontAssetPath);
-        PanelSprite = WhiteBoxArt.LoadSprite("ui_panel");
-        WhiteSprite = WhiteBoxArt.LoadSprite("ui_white");
+        PanelSprite = WhiteBoxArt.Square;
+        WhiteSprite = WhiteBoxArt.Square;
 
         if (Font == null) Debug.LogError("[WhiteBoxUI] 中文字体没有导入，UI 会缺字");
-        if (PanelSprite == null) Debug.LogError("[WhiteBoxUI] ui_panel 没有生成");
-        if (WhiteSprite == null) Debug.LogError("[WhiteBoxUI] ui_white 没有生成");
     }
 
     public static Canvas MakeCanvas(string name)
@@ -52,7 +50,7 @@ public static class WhiteBoxUI
         var rect = Node(name, parent, anchor, pivot, position, size);
         var image = rect.gameObject.AddComponent<Image>();
         image.sprite = PanelSprite;
-        image.type = Image.Type.Sliced;
+        image.type = Image.Type.Simple;
         image.color = color;
         return image;
     }
