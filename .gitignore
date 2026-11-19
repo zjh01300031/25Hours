@@ -1,0 +1,37 @@
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# 生成出来的工程文件
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.idea/
+.vscode/
+
+# 系统
+Thumbs.db
+.DS_Store
+
+# 字体：SimHei 是 Windows 自带字体，不再分发；
+# 生成器 WhiteBoxArt.EnsureFont 会自动从 C:\Windows\Fonts\simhei.ttf 复制一份进来
+Assets/Fonts/*.ttf
+Assets/Fonts/*.otf
