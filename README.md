@@ -2,7 +2,9 @@
 
 《第25小时》第 0 层的可运行框架：两层空间、楼梯、两扇事件门，以及「完成事件一后解锁事件二」的进度链。
 
-这一层只负责「能跑、能测交互」：没有任何美术资源（所有物件共用一块白方块，靠颜色区分），没有台词，两个事件场景是空房间，留给关卡和玩法负责人往里填内容。
+这一层只负责「能跑、能测交互」：没有任何美术资源（所有物件共用一块白方块，靠颜色区分），两个事件场景是空房间，留给关卡和玩法负责人往里填内容。
+
+已经能用的系统：左右移动 + 斜坡/楼梯行走 + 跳跃（含土狼时间）、交互提示、门与物品交互、**文案从 CSV 读**、**进度与背包存档**、事件跳转与前置解锁。
 
 - Unity 版本：`2022.3.62f3c1`
 - 目标平台：Windows（Standalone）
@@ -18,7 +20,7 @@
 | --- | --- | --- |
 | ![出生点](docs/preview/04-spawn.png) | ![锁着的门](docs/selftest/04_door-02-locked.png) | ![解锁后的门](docs/selftest/09_door-02-unlocked.png) |
 
-完整流程截图（11 张）见 `docs/selftest/`。
+完整流程截图（14 张）见 `docs/selftest/`。
 
 ## 快速开始
 
@@ -40,7 +42,7 @@ git clone git@github.com:zjh01300031/25Hours.git
 | --- | --- |
 | `A` / `D` | 左右移动（斜坡、楼梯自动贴着走） |
 | `空格` | 跳跃（空中不可二段跳，落地有土狼时间） |
-| `E` | 与附近的门交互 |
+| `E` | 与附近的门 / 物品交互 |
 | `Esc` | 关闭提示 |
 
 ## 这一层里有什么
@@ -58,7 +60,9 @@ B1  ── 地面（x -22 … -11）、左墙
 | 玩家（主控） | `(0, 1)` | 默认出生点，`ShelterPlayer.spawnPoint` 可改 |
 | 门·事件一 | `(15, 1.3)` | `eventId = event_01`，没有前置条件 |
 | 门·事件二 | `(-21, -4.7)` | `eventId = event_02`，`requiresEventId = event_01` |
-| 事件登记表 | `04_系统` | `EventCatalog`，id → 场景名 |
+| 拾取_磁带 | `(7, 1.2)` | `itemId = item_tape`，`storyId = pickup.tape` |
+| 拾取_钥匙 | `(-15, -5.2)` | `itemId = item_key`，`storyId = pickup.key` |
+| 事件登记表 | `05_系统` | `EventCatalog`，id → 场景名 |
 
 门的两种状态：锁着（红色光晕 + `查看` 提示）与解锁（暖色光晕 + `进入` 提示）。解锁条件的唯一来源是 `GameProgress.IsEventCleared(requiresEventId)`，所以任何事件只要调用一次 `Complete()` 就能开锁。
 
@@ -84,6 +88,21 @@ public class MyEventRoom : EventRoomBase
 
 进度、碎片计数都在 `GameProgress`（`DontDestroyOnLoad`，跨场景保留）；场景切换用 `ShelterFlow`。详细 API 见 [docs/event-integration.md](docs/event-integration.md)。
 
+## 文案放在哪
+
+所有台词都在 `Assets/Resources/Story/story.csv`，一行一句，同一个 id 写多行就是多句：
+
+```csv
+id,speaker,text
+pickup.tape,磁带,（示例文案）一盒没有标签的磁带，标签被人撕掉了。
+door02.locked,门·事件二,（示例文案）门锁着，先在事件一里把那摊事做完。
+```
+
+- 第一列是 id，代码里靠它取词：门用 `enterStoryId / lockedStoryId / clearedStoryId`，物品用 `storyId`
+- `text` 留空的句子会被跳过；整段 id 都没有文本时，交互自动回落到功能反馈（toast），不会弹空对话框
+- 改完 CSV 想确认有没有漏 id：菜单 `工具 / 25小时 / 检查文案`
+- 存档在 `%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\progress.json`（碎片、已完成事件、背包物品）；`-selftest` 模式不读写存档
+
 ## 构建与自测
 
 菜单 `工具 / 25小时`：
@@ -96,8 +115,9 @@ public class MyEventRoom : EventRoomBase
 | 一键：重建 + 截图 + 打包 | 上面三步 + 打 Windows 包到 `D:/Unity2D/Build/25Hours/25Hours.exe` |
 | 截图预览（世界） | 只出预览图 |
 | 构建 Windows 试玩版 | 只打包 |
+| 检查文案 | 遍历场景里的 storyId，报告 story.csv 里缺哪些 |
 
-自测（走楼梯、跳、两扇门、解锁链，出 11 张图并退出）：
+自测（拾取、跳跃、楼梯、两扇门、解锁链，出 14 张图并退出）：
 
 ```powershell
 D:\Unity2D\Build\25Hours\25Hours.exe -selftest -screen-width 1280 -screen-height 720 -screen-fullscreen 0
@@ -112,6 +132,8 @@ Assets/
   Editor/       WhiteBoxArt（白方块 + 字体）、WhiteBoxUI、Level0Builder（生成场景）
   Scripts/      GameProgress、ShelterFlow、EventCatalog、EventDoor、EventRoomBase、
                 ShelterPlayer、ShelterInteractor、ShelterDialogue、ShelterHUD、CameraRig2D…
+  Scripts/Story/ StoryDatabase（读 CSV）、StoryInteractable、PickupItem
+  Resources/Story/ story.csv —— 所有台词
   Scenes/       Shelter_L0、Event_01、Event_02
   Whitebox/     white.png —— 8×8 纯白贴图，全场景共用
   Fonts/        字体（.gitignore 里，构建时自动补齐）
@@ -123,7 +145,7 @@ legacy/         2024-11 旧原型，仅存档
 ## 现状与限制
 
 - **没有美术**：一块白方块 + 颜色。真美术后期替换
-- **没有台词**：交互只给功能反馈（门开 / 门锁 / 进度）
+- **台词是占位文案**：都在 `story.csv` 里，正式文本直接替换；没有文本时只给功能反馈
 - **没有关卡设计**：房间尺寸、家具、碎片摆放都留给人来做
 - **事件场景是空房间**：棋盘 / 玩法由事件负责人接入
 - 视觉上只有 1F、楼梯、B1 三段，够验证「上楼 / 下楼 / 进门 / 解锁」

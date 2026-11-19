@@ -10,8 +10,9 @@
 | --- | --- |
 | `01_结构` | 1F 地板 / 右墙，楼梯（13 级台阶 + 隐形斜坡），B1 地板 / 左墙 |
 | `02_角色` | 玩家_主控（Rigidbody2D + BoxCollider2D + `ShelterPlayer` + `ShelterInteractor`） |
-| `03_门` | 门·事件一、门·事件二（各带 `图` 与 `光` 两个子物体） |
-| `04_系统` | GameProgress、AppBoot、事件登记表（EventCatalog）、自测（ShelterSelfTest） |
+| `03_物品` | 拾取_磁带、拾取_钥匙（`PickupItem`，各带 `图` 子物体） |
+| `04_门` | 门·事件一、门·事件二（各带 `图` 与 `光` 两个子物体） |
+| `05_系统` | GameProgress、AppBoot、事件登记表（EventCatalog）、自测（ShelterSelfTest） |
 | `UI` | 标题、操作提示、提示条、toast、对话框 |
 
 ## 坐标
@@ -27,6 +28,8 @@
 | 玩家出生点 | `(0, 1)` | 碰撞盒 `0.8 × 1.45` |
 | 门·事件一 | `(15, 1.3)` | `1.2 × 2.6`，`eventId = event_01` |
 | 门·事件二 | `(-21, -4.7)` | `1.2 × 2.6`，`eventId = event_02`，`requiresEventId = event_01` |
+| 拾取_磁带 | `(7, 1.2)` | `0.5 × 0.5`，`itemId = item_tape`，`storyId = pickup.tape` |
+| 拾取_钥匙 | `(-15, -5.2)` | `0.5 × 0.5`，`itemId = item_key`，`storyId = pickup.key` |
 
 1F 左边不砌墙：走到 x = -6 就是楼梯口，斜坡从那里起步。B1 走到 x = -22 被墙挡住。
 
@@ -35,9 +38,16 @@
 | Layer | 用途 |
 | --- | --- |
 | `Ground`(8) | 地板、墙、斜坡碰撞 |
-| `Interactable`(9) | 门的触发器（`CircleCollider2D`，半径 1.0） |
+| `Interactable`(9) | 门与物品的触发器（`CircleCollider2D`，半径 1.0 / 0.9） |
 
 只有地板、墙、斜坡是实体；台阶只是视觉，玩家靠斜坡上下。玩家脚底用 `BoxCast` 判地面，斜坡上按坡面方向给速度，所以在 58° 的隐形斜坡上也能正常起跳。
+
+## 文案与存档
+
+- 台词全在 `Assets/Resources/Story/story.csv`（`id,speaker,text`，同 id 多行 = 多句）；读取逻辑在 `Assets/Scripts/Story/StoryDatabase.cs`（类名 `Story`）
+- 门用 `enterStoryId / lockedStoryId / clearedStoryId`，物品用 `storyId`；文本为空时跳过，整段没有文本就回落到 toast
+- 存档 `%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\progress.json`（碎片、已完成事件、背包）；`-selftest` 下不读写
+- 菜单 `工具 / 25小时 / 检查文案` 报告缺失的 id
 
 ## 生成脚本
 
