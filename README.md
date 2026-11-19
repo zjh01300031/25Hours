@@ -1,12 +1,6 @@
 # 第 25 小时 · 第 0 层白盒
 
-Unity 2022.3.62f3c1 工程。仓库里只有白盒场景和驱动它的脚本，没有任何美术资源。
-
-## 打开
-
-Unity Hub → Add → 选这个文件夹 → 打开 `Assets/Scenes/Shelter_L0.unity` → 按 ▶ 试玩。
-
-第一次打开会自动从 `C:\Windows\Fonts\simhei.ttf` 复制字体到 `Assets/Fonts`（字体不进仓库）。
+Unity 2022.3.62f3c1。打开 `Assets/Scenes/Shelter_L0.unity`，按 ▶ 运行。
 
 ## 操作
 
@@ -16,32 +10,6 @@ Unity Hub → Add → 选这个文件夹 → 打开 `Assets/Scenes/Shelter_L0.un
 | 空格 | 跳跃 |
 | E | 交互（拾取、开门、看对话） |
 
-## 场景里有什么
+## 构建
 
-- `玩家_主控` —— 移动、跳跃、斜坡行走、交互检测
-- `事件门.prefab` —— 靠近按 E 进入事件场景，可设前置事件做解锁链
-- `拾取物.prefab` —— 靠近按 E 收进背包
-- `事件登记表` —— 事件 id 与场景名的对照表
-- `UI` —— 提示条、对话框、toast
-
-## 菜单
-
-`工具 / 25小时 /`
-
-- 用选中方块生成 12 级台阶
-- 给楼梯加隐形斜面（楼梯_斜坡）
-- 导出预制体
-- 检查文案 / 清空存档 / 修复丢失的精灵引用
-- 重建场景骨架（会覆盖手搭内容，用前先另存）
-
-## 文案
-
-`Assets/Resources/Story/story.csv`，表头 `id,speaker,text`，同一个 id 写多行就是多句。
-
-## 存档
-
-默认不落盘，每次运行从头开始。需要跨运行保留，选中 `GameProgress` 勾上 `Persist Progress`。
-
-## 说明
-
-场景里的方块只是占位，颜色区分玩家/门/物品；换成美术资源时替换 SpriteRenderer 的 Sprite 即可，逻辑不用动。
+菜单 `工具 / 25小时 / 构建 Windows 试玩版` → 输出到 `D:/Unity2D/Build/25Hours`。
