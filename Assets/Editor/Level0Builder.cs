@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -131,6 +131,7 @@ public static class Level0Builder
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
         new GameObject("GameProgress", typeof(GameProgress));
+        new GameObject("AppBoot", typeof(AppBoot));
 
         var camGo = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
         camGo.tag = "MainCamera";
@@ -144,6 +145,7 @@ public static class Level0Builder
         var rig = camGo.AddComponent<CameraRig2D>();
         rig.min = new Vector2(-8f, -6.4f);
         rig.max = new Vector2(10.2f, 2.6f);
+        rig.smoothTime = 0.08f;
 
         var world = new GameObject("World").transform;
 
@@ -653,16 +655,13 @@ public static class Level0Builder
 
     static void BuildEventScenes()
     {
-        BuildEventScene(Event01ScenePath, "event_01", "事件一 · 回声室",
-            "棋盘玩法 · 由棋盘负责人接入（这里只是占位）",
-            "第 0 层东边那扇门通向这里。把棋盘挂上来，点亮全部格子后调 Complete()。");
-        BuildEventScene(Event02ScenePath, "event_02", "事件二 · 深处",
-            "完成事件一之后，楼梯下那扇门才会打开",
-            "这里同样是占位。事件二的解锁条件写在门的 requiresEventId 上（event_01）。");
+        BuildEventScene(Event01ScenePath, "event_01");
+        BuildEventScene(Event02ScenePath, "event_02");
         Debug.Log("[25Hours] 事件场景：Event_01 / Event_02");
     }
 
-    static void BuildEventScene(string path, string eventId, string title, string subtitle, string note)
+    // 事件场景是给负责人接玩法的空房间：只有相机 + 进度 + 事件脚本，不写任何文字。
+    static void BuildEventScene(string path, string eventId)
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -680,42 +679,6 @@ public static class Level0Builder
         var roomGo = new GameObject("事件房间", typeof(EventRoomTemplate));
         var room = roomGo.GetComponent<EventRoomTemplate>();
         room.SetEventId(eventId);
-
-        var canvas = WhiteBoxUI.MakeCanvas("UI");
-        WhiteBoxUI.Stretch(canvas.transform, "底色", new Color(0.035f, 0.04f, 0.05f, 1f));
-
-        WhiteBoxUI.Label("标题", canvas.transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -90f), new Vector2(1400f, 64f), title,
-            44, TextAnchor.UpperCenter, new Color(0.95f, 0.86f, 0.66f, 1f));
-
-        WhiteBoxUI.Label("说明", canvas.transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -170f), new Vector2(1200f, 40f), subtitle,
-            26, TextAnchor.UpperCenter, new Color(0.66f, 0.7f, 0.78f, 1f));
-
-        var body = WhiteBoxUI.Label("接入要点", canvas.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, 40f), new Vector2(1200f, 420f), note + "\n\n" +
-            "1. 场景里挂一个继承 EventRoomBase 的脚本，事件做完调 Complete()\n" +
-            "2. 中途退出调 Leave()（不记录完成）\n" +
-            "3. 这个场景要加进 Build Settings\n" +
-            "4. 第0层「事件登记表」里确认 id → 场景名\n" +
-            "5. 需要读/写进度就用 GameProgress.Ensure()",
-            28, TextAnchor.MiddleCenter, new Color(0.78f, 0.81f, 0.86f, 1f));
-        body.horizontalOverflow = HorizontalWrapMode.Wrap;
-        body.verticalOverflow = VerticalWrapMode.Overflow;
-
-        room.statusText = WhiteBoxUI.Label("状态", canvas.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(0f, 190f), new Vector2(1000f, 44f), "事件进行中（这里是占位，没有玩法）",
-            30, TextAnchor.LowerCenter, new Color(0.92f, 0.8f, 0.5f, 1f));
-
-        WhiteBoxUI.Label("操作", canvas.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(0f, 132f), new Vector2(1200f, 36f), "按 E：算作完成并返回　·　按 Esc：直接返回（不记录完成）",
-            24, TextAnchor.LowerCenter, new Color(0.62f, 0.66f, 0.74f, 1f));
-
-        WhiteBoxUI.Label("备注", canvas.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(0f, 60f), new Vector2(1500f, 30f), "棋盘换上来以后，把这一页的占位说明删掉就行。",
-            20, TextAnchor.LowerCenter, new Color(0.45f, 0.48f, 0.54f, 1f));
-
-        new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, path);

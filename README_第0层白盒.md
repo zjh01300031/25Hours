@@ -17,8 +17,8 @@
 | 路径 | 内容 |
 | --- | --- |
 | `Assets/Scenes/Shelter_L0.unity` | 第 0 层主场景 |
-| `Assets/Scenes/Event_01.unity` | 事件一 · 回声室（棋盘玩法占位） |
-| `Assets/Scenes/Event_02.unity` | 事件二 · 深处（完成事件一才解锁） |
+| `Assets/Scenes/Event_01.unity` | 事件一 · 回声室（**纯空房间**：只有相机 + 事件脚本，无文字无 UI） |
+| `Assets/Scenes/Event_02.unity` | 事件二 · 深处（同上，空房间；完成事件一才解锁） |
 | `Assets/Art/*.png` | 全部占位图（16px/单位，Point 过滤） |
 | `Assets/Fonts/SimHei.ttf` | 从 `C:\Windows\Fonts\simhei.ttf` 复制的字体 |
 | `Assets/Editor/WhiteBox*.cs`、`Level0Builder.cs` | 生成器本体 |
@@ -133,7 +133,8 @@ Layer 约定：`Ground = 8`（可站立的实体），`Interactable = 9`（可�
 ## 七、已知限制 / 下一步
 
 - 美术全是纯色块占位，没有动画、没有音效。
-- 事件场景只有一个空模板（`Event_Template`），棋盘 / 顶视角地图是事件负责人的部分，接入约定见 `README_事件接入.md`。
+- 事件场景就是两个**空房间**（`Event_01` / `Event_02`，没有文字、没有 UI、没有玩法），只保留「进门 → `Complete()` → 回原位」的链路；棋盘 / 顶视角地图是事件负责人的部分，接入约定见 `README_事件接入.md`。
+- 手感与性能：`AppBoot` 把物理步长固定成 1/60 秒、渲染跟随垂直同步；HUD 提示文字只在变化时才重建，避免高刷屏上每帧刷 UGUI 造成的顿感。打包版加 `-fps` 可在日志里看到帧率与最差一帧。
 - 没有存档：进度只在 `GameProgress` 单例里，退出即丢。
 - 楼梯是视觉台阶 + 隐形斜坡两套：改台阶样子不影响走路，但改斜坡要同时改台阶位置才不穿帮。
 - 2 区（B1 右侧那扇门）按设计图留了「未解锁」状态，门后没有内容。

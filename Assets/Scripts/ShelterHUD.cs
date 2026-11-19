@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>第0层的 HUD：左下操作提示、右下提示条、碎片计数、气泡消息。</summary>
@@ -8,6 +8,8 @@ public class ShelterHUD : MonoBehaviour
 
     public GameObject promptRoot;
     public Text promptText;
+
+    string lastPrompt;
     public Text fragmentText;
     public Text titleText;
     public Text helpText;
@@ -45,8 +47,12 @@ public class ShelterHUD : MonoBehaviour
 
     public void SetPrompt(string text)
     {
+        // 每帧调用：文字没变就什么都别做，否则 UGUI 每帧重建文字网格，高刷屏上会明显掉帧
+        if (text == lastPrompt) return;
+        lastPrompt = text;
+
         bool show = !string.IsNullOrEmpty(text);
-        if (promptRoot != null) promptRoot.SetActive(show);
+        if (promptRoot != null && promptRoot.activeSelf != show) promptRoot.SetActive(show);
         if (promptText != null) promptText.text = show ? text : "";
     }
 

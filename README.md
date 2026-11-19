@@ -1,4 +1,4 @@
-# 第 25 小时 · 第 0 层白盒（Shelter L0）
+﻿# 第 25 小时 · 第 0 层白盒（Shelter L0）
 
 一句「一天里的第 25 小时」的项目，这是它的第一块可玩白盒：**避难所 1 区**，2D 横版，1F + 楼梯井 + B1 三层空间。
 
@@ -34,6 +34,7 @@ Unity **2022.3.62f3c1** · URP 未启用（内置管线）· 全部美术是代�
 - **B1**：工作台、旧收音机、人偶、抽屉柜、线缆盘、木箱，暗角里的 **门·事件二**
 - **6 个碎片** 散在两层，捡到会进右上角计数
 - **回声匣**只对话，不再直接把玩家传进事件
+- **两个事件场景是纯空房间**：只有相机 + `EventRoomTemplate`，连一个字都没有，留给事件负责人自己铺玩法（按 `E` 算完成、`Esc` 直接返回）
 
 ### 两扇门与解锁链
 
@@ -102,7 +103,7 @@ GameProgress.Ensure().AddFragment("frag_07");
 25Hours.exe -selftest -screen-width 1280 -screen-height 720 -screen-fullscreen 0
 ```
 
-15 张截图在 [`docs/selftest`](docs/selftest)，日志在 `%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\Player.log`。
+15 张截图在 [`docs/selftest`](docs/selftest)；加 `-fps` 会在日志里每秒打一行帧率和最差一帧耗时，日志在 `%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\Player.log`。
 
 ## 一起改
 
@@ -120,7 +121,8 @@ GameProgress.Ensure().AddFragment("frag_07");
 
 - 美术全是 Editor 脚本画的占位图（`Assets/Art` 是生成物，删了能重建）
 - 中文字体用 Windows 自带的 SimHei，**没有进仓库**；生成器会从 `C:\Windows\Fonts\simhei.ttf` 自动复制。发布前请换成可商用字体
-- 事件场景是空模板，棋盘还没接
+- 事件场景是纯空房间（无文字/无 UI），棋盘还没接；这里只保证「进门 → Complete() → 回原位」这条链路是通的
+- 手感：物理步长固定 1/60 秒、渲染跟随垂直同步（这台机器 165Hz）、HUD 提示只在文字变化时重建，不会再每帧刷 UGUI
 - 菜单「重建第0层」会整个覆盖 `Shelter_L0` / `Event_01` / `Event_02`，想在场景里手改的请先另存
 
 ## 参考
