@@ -35,11 +35,16 @@ public class ShelterPlayer : MonoBehaviour
 
     public bool IsGrounded { get { return grounded; } }
 
+    /// <summary>自测/调试用：看当前速度。</summary>
+    public Vector2 Velocity { get { return rb != null ? rb.velocity : Vector2.zero; } }
+
     /// <summary>瞬移（自测/调试用）：同时清掉速度，免得带着旧惯性飞出去。</summary>
     public void Teleport(Vector3 position)
     {
         rb.position = position;
         rb.velocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+        rb.WakeUp();
         transform.position = position;
     }
 
@@ -50,6 +55,7 @@ public class ShelterPlayer : MonoBehaviour
     float jumpBuffer;
     float horizontal;
     float nextStepTime;
+    float airLock;
 
     void Awake()
     {
@@ -113,31 +119,44 @@ public class ShelterPlayer : MonoBehaviour
 
     void FixedUpdate()
     {
-        var checkPos = groundCheck != null ? groundCheck.position : transform.position + Vector3.down * 0.78f;
-        grounded = Physics2D.OverlapCircle(checkPos, groundCheckRadius, groundMask) != null;
+        if (airLock > 0f) airLock -= Time.fixedDeltaTime;
 
-        // 脚下如果踩在斜坡（楼梯）上，就顺着坡走，而不是被重力往下拽
+        var checkPos = groundCheck != null ? groundCheck.position : transform.position + Vector3.down * 0.78f;
+
+        // 用「脚底薄盒子向下 BoxCast」判地面：楼梯是 58° 的斜坡，脚下中心点到坡面的垂直距离
+        // 有 0.6 左右，原来只用一个半径 0.18 的圆检测，在斜坡上会一直判成「没落地」，
+        // 表现就是站在楼梯上跳不起来、还慢慢往下滑。
+        var bounds = box.bounds;
+        var feet = new Vector2(bounds.center.x, bounds.min.y + 0.02f);
+        var cast = Physics2D.BoxCast(feet, new Vector2(bounds.size.x * 0.92f, 0.04f), 0f,
+            Vector2.down, 0.14f, groundMask);
+
+        bool touching = cast.collider != null
+                        || Physics2D.OverlapCircle(checkPos, groundCheckRadius, groundMask) != null;
+
+        // 只在「没在往上飞」且「刚起跳的锁定时间过了」时才算踩在地上。
+        grounded = touching && rb.velocity.y <= 0.01f && airLock <= 0f;
+
+        // 站在斜坡（楼梯）上就顺着坡走，而不是被重力往下拽
         float slope = 0f;
-        if (grounded)
+        if (grounded && cast.collider != null && cast.normal.y > 0.15f)
         {
-            var down = Physics2D.Raycast(checkPos, Vector2.down, 0.9f, groundMask);
-            if (down.collider != null && down.normal.y > 0.15f) slope = -down.normal.x / down.normal.y;
+            slope = -cast.normal.x / cast.normal.y;
         }
 
         bool onSlope = grounded && Mathf.Abs(slope) > 0.25f;
-        rb.gravityScale = onSlope ? 0f : gravityScale;
 
         if (onSlope)
         {
+            rb.gravityScale = 0f;
             rb.velocity = Mathf.Abs(horizontal) < 0.01f
                 ? Vector2.zero
-                : new Vector2(horizontal * moveSpeed, horizontal * moveSpeed * slope);
+                : new Vector2(horizontal, horizontal * slope).normalized * moveSpeed;
         }
         else
         {
-            float vy = rb.velocity.y;
-            if (grounded && vy > 0.5f) vy = 0f; // 刚走出斜坡时别被弹起来
-            rb.velocity = new Vector2(horizontal * moveSpeed, vy);
+            rb.gravityScale = gravityScale;
+            rb.velocity = new Vector2(horizontal * moveSpeed, rb.velocity.y);
         }
 
         if (grounded) coyote = coyoteTime;
@@ -145,16 +164,25 @@ public class ShelterPlayer : MonoBehaviour
 
         if (jumpBuffer > 0f && coyote > 0f)
         {
+            rb.WakeUp();
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
             rb.gravityScale = gravityScale;
             jumpBuffer = 0f;
             coyote = 0f;
             grounded = false;
+            airLock = 0.12f; // 起跳后短暂忽略地面检测，免得立刻被斜坡拽回去
         }
         else if (grounded && Mathf.Abs(rb.velocity.y) < 0.2f)
         {
             StepAssist(horizontal);
         }
+    }
+
+    /// <summary>自测/调试用：不走键盘，直接请求一次跳跃。</summary>
+    public void ForceJump()
+    {
+        rb.WakeUp();
+        jumpBuffer = jumpBufferTime;
     }
 
     /// <summary>撞到矮台阶时把脚抬上去——楼梯有斜坡碰撞，这个留给小台沿。</summary>

@@ -50,6 +50,43 @@ public class ShelterSelfTest : MonoBehaviour
         Log("出生", player);
         yield return Shot("01_出生");
 
+        // ---- 跳跃自检 1：平地 ----
+        {
+            float startY = player.transform.position.y;
+            player.ForceJump();
+            float peak = startY;
+            for (int i = 0; i < 70; i++)
+            {
+                yield return new WaitForFixedUpdate();
+                if (player.transform.position.y > peak) peak = player.transform.position.y;
+            }
+            Debug.Log(string.Format("[自测] 平地跳跃：起跳 y={0:F2}，最高 y={1:F2}（升 {2:F2}），落地 y={3:F2} grounded={4}",
+                startY, peak, peak - startY, player.transform.position.y, player.IsGrounded));
+        }
+
+        // ---- 跳跃自检 2：楼梯斜坡上（最容易「卡住」的地方）----
+        player.Teleport(new Vector3(-0.5f, -2.2f, 0f));
+        yield return new WaitForSeconds(0.9f);
+        {
+            float startY = player.transform.position.y;
+            Debug.Log(string.Format("[自测] 斜坡起跳前：y={0:F2} grounded={1} vy={2:F2}",
+                startY, player.IsGrounded, player.Velocity.y));
+            player.ForceJump();
+            yield return new WaitForFixedUpdate();
+            Debug.Log(string.Format("[自测] 斜坡跳后1帧：y={0:F2} grounded={1} vy={2:F2}",
+                player.transform.position.y, player.IsGrounded, player.Velocity.y));
+            float peak = player.transform.position.y;
+            for (int i = 0; i < 80; i++)
+            {
+                yield return new WaitForFixedUpdate();
+                if (player.transform.position.y > peak) peak = player.transform.position.y;
+            }
+            Debug.Log(string.Format("[自测] 斜坡跳跃：落点 y={0:F2}，最高 y={1:F2}（升 {2:F2}），结束 y={3:F2} grounded={4}",
+                startY, peak, peak - startY, player.transform.position.y, player.IsGrounded));
+        }
+        player.Teleport(new Vector3(2.6f, 0.9f, 0f));
+        yield return new WaitForSeconds(0.4f);
+
         Log("向左下楼梯", player);
         player.AutoMove = -1f;
         yield return new WaitForSeconds(1.6f);
