@@ -1,90 +1,85 @@
-# 第 0 层白盒：结构与调整说明
+# 第0层白盒说明
 
-本文记录 `Shelter_L0` 的构建方式、坐标与可交互物，以及不用改代码就能做的调整。
+第 0 层只是一个能跑通「上下楼 + 进事件 + 解锁」的框架。房间怎么设计、放什么，不在这里决定。
 
-## 1. 场景概况
+## 场景与分组
 
-单张横版场景，分两层空间，中间由楼梯井连接。
+`Assets/Scenes/Shelter_L0.unity`
 
-| 区域 | X 范围 | 地面 / 顶板 | 说明 |
-| --- | --- | --- | --- |
-| 1F | 2 → 17 | 地面 y = 0，顶棚 y = 7.5 | 主要活动区，东墙为门 · 事件一 |
-| 楼梯井 | -3 → 2 | — | 20 级台阶，从 y = 0 降到 y = -8 |
-| B1 | -17 → -3 | 地面 y = -8，顶板 y = -0.8 | 西南角为门 · 事件二 |
+| 分组 | 内容 |
+| --- | --- |
+| `01_结构` | 1F 地板 / 右墙，楼梯（13 级台阶 + 隐形斜坡），B1 地板 / 左墙 |
+| `02_角色` | 玩家_主控（Rigidbody2D + BoxCollider2D + `ShelterPlayer` + `ShelterInteractor`） |
+| `03_门` | 门·事件一、门·事件二（各带 `图` 与 `光` 两个子物体） |
+| `04_系统` | GameProgress、AppBoot、事件登记表（EventCatalog）、自测（ShelterSelfTest） |
+| `UI` | 标题、操作提示、提示条、toast、对话框 |
 
-- 出生点：`(2.6, 0.76)`，紧邻楼梯口
-- 相机：正交，`orthographicSize = 4.6`；跟随并对坐标做夹取，范围 `(-8, -6.4)` → `(8, 2.4)`
-- 玩家：`moveSpeed = 5`、`jumpForce = 12.5`、`gravityScale = 3.5`、`stepHeight = 0.55`
+## 坐标
 
-## 2. 楼梯
+| 物件 | 位置 | 尺寸 |
+| --- | --- | --- |
+| 1F 地板 | `(5, -0.4)` | `22 × 0.8`（顶面 y = 0） |
+| 1F 右墙 | `(16.3, 4.1)` | `0.6 × 9` |
+| B1 地板 | `(-16.5, -6.4)` | `11 × 0.8`（顶面 y = -6） |
+| B1 左墙 | `(-22.3, -2.1)` | `0.6 × 8.6` |
+| 台阶 | 从 `(-6, 0)` 到 `(-11, -6)`，13 级 | 每级 `≈0.38 × 0.46`，无碰撞 |
+| 楼梯_斜坡碰撞 | 两点的中点 | 长 `√(5² + 6²)`、厚 `0.3`，旋转 `atan2(-6, -5)` |
+| 玩家出生点 | `(0, 1)` | 碰撞盒 `0.8 × 1.45` |
+| 门·事件一 | `(15, 1.3)` | `1.2 × 2.6`，`eventId = event_01` |
+| 门·事件二 | `(-21, -4.7)` | `1.2 × 2.6`，`eventId = event_02`，`requiresEventId = event_01` |
 
-台阶只是视觉表现，站立面是一条不可见的斜坡碰撞体（`01_建筑/楼梯/楼梯_斜坡碰撞`），从 `(2, 0)` 连到 `(-3, -8)`，倾角约 58°。
+1F 左边不砌墙：走到 x = -6 就是楼梯口，斜坡从那里起步。B1 走到 x = -22 被墙挡住。
 
-- 斜坡上关闭重力，速度按坡面方向给，上下楼一致
-- 判定地面用脚底 BoxCast，因此在斜坡上也能起跳
-- 台阶本身不参与碰撞，角度调整只需修改该物体的位置、旋转与长度
+## 层与碰撞
 
-## 3. 可交互物
+| Layer | 用途 |
+| --- | --- |
+| `Ground`(8) | 地板、墙、斜坡碰撞 |
+| `Interactable`(9) | 门的触发器（`CircleCollider2D`，半径 1.0） |
 
-坐标为物体中心点，尺寸为触发区大小。
+只有地板、墙、斜坡是实体；台阶只是视觉，玩家靠斜坡上下。玩家脚底用 `BoxCast` 判地面，斜坡上按坡面方向给速度，所以在 58° 的隐形斜坡上也能正常起跳。
 
-| 名称 | 类型 | 位置 (x, y) | 尺寸 | ID / 说明 |
-| --- | --- | --- | --- | --- |
-| 展柜 | DialogueProp | 4.4, 1.5 | 1.3 × 2.4 | 事件一完成后多一个人偶 |
-| 纸箱 | FragmentPickup | 5.6, 0.5 | 1.0 × 1.0 | frag_01 |
-| 柜子 | FragmentPickup | 7.6, 0.9 | 1.1 × 1.8 | frag_02 |
-| 回声匣 | DialogueProp | 10.2, 1.2 | 0.55 × 0.55 | 仅对话，不进入事件 |
-| 门 · 事件一 | EventDoor | 16.2, 1.35 | 1.4 × 2.7 | event_01，无前置条件 |
-| 人偶（1F） | DialogueProp | 12.8, 0.62 | 0.7 × 1.2 | — |
-| 书架 | FragmentPickup | 14.6, 0.6 | 1.4 × 1.2 | frag_03 |
-| 玻璃罐 | FragmentPickup | 14.6, 1.4 | 0.4 × 0.4 | frag_04 |
-| 门 · 事件二 | EventDoor | -4.0, -6.6 | 1.2 × 2.8 | event_02，前置 event_01 |
-| 抽屉柜 | FragmentPickup | -7.6, -7.1 | 1.3 × 1.8 | frag_06 |
-| 人偶（B1） | DialogueProp | -9.8, -7.4 | 0.7 × 1.2 | — |
-| 旧收音机 | FragmentPickup | -12.2, -7.55 | 0.9 × 0.7 | frag_05 |
-
-家具与可交互物只有 Trigger 碰撞，不阻挡移动；只有 `01_建筑` 是实心。装饰物（B1 木箱、线缆盘、门框、墙裙等）也不阻挡移动。
-
-## 4. 生成脚本
+## 生成脚本
 
 | 文件 | 作用 |
 | --- | --- |
-| `Assets/Editor/Level0Builder.cs` | 生成三个场景、Build Settings、预览图、Windows 包 |
-| `Assets/Editor/WhiteBoxArt.cs` | 只生成一块 8×8 白方块 `wb_block`（PPU 16 / Point / 无压缩），并导入中文字体 |
-| `Assets/Editor/WhiteBoxUI.cs` | 代码构建 Canvas、面板、文字、按钮 |
-| `Assets/Editor/WhiteBoxWindow.cs` | 白盒工具箱窗口 |
+| `Assets/Editor/WhiteBoxArt.cs` | 生成 `Assets/Whitebox/white.png`（8×8 纯白）+ 从系统复制中文字体 |
+| `Assets/Editor/WhiteBoxUI.cs` | Canvas、面板、文字、按钮 |
+| `Assets/Editor/Level0Builder.cs` | 生成三个场景、Build Settings、预览截图、Windows 包 |
 
-菜单：
+菜单 `工具 / 25小时`：
 
-- `工具 / 25小时 / 重建第0层（白盒）` — 贴图 + 三个场景 + Build Settings
-- `工具 / 25小时 / 白盒工具箱` — 打开场景、只出预览图、网格对齐、按尺寸加平台
-- `工具 / 25小时 / 一键：重建 + 截图 + 打包` — 上述全部，输出 `D:/Unity2D/Build/25Hours`
+- 重建第0层（框架）
+- 打开第0层并运行
+- 重建并截图
+- 一键：重建 + 截图 + 打包
+- 截图预览（世界）
+- 构建 Windows 试玩版
 
-生成的内容会覆盖同名场景，手改前请先另存。
+## 手动调整
 
-## 5. 手动调整
+- 房间大小：改 `Level0Builder.BuildStructure` 里的 `Box(...)`，或者直接在 Scene 里拖
+- 楼梯坡度：改 `StairTopX` / `StairBottomX` 常量后重建；斜坡碰撞体会跟着重算
+- 门的位置：Scene 里拖 `门·事件一` / `门·事件二`，或在生成器 `BuildDoor(...)` 里改坐标
+- 出生点：`玩家_主控` 上的 `ShelterPlayer.spawnPoint`
+- 相机范围：`Main Camera` 上的 `CameraRig2D.min` / `max`
 
-- 移动、缩放家具：直接在场景里拖；只有 `01_建筑` 里的物体影响通行
-- 加一块可站立的地面：工具箱 →「在选中物体位置加一块平台」，自动放到 `Ground` 层
-- 对齐：工具箱 → 网格大小 +「把选中物体对齐到网格」
-- 换美术：所有物件共用一个 `wb_block` 白方块，颜色由 `Level0Builder.TintFor(名字)` 给定；要换正式美术，把物件上的 `SpriteRenderer.sprite` 换成正式图，并把 `sr.color` 设为白色
-- 白盒阶段不产出任何美术资源，`Assets/Art` 里只有 `wb_block.png` 一张
+手改之后不要再点「重建」，重建会用生成器的内容覆盖场景。
 
-## 6. 自测
+## 自测
 
 ```powershell
-.\25Hours.exe -selftest -screen-width 1280 -screen-height 720 -screen-fullscreen 0
+25Hours.exe -selftest -screen-width 1280 -screen-height 720 -screen-fullscreen 0
 ```
 
-依次执行：出生 → 下楼 → B1 行走 → 回声匣 → 事件二（锁态）→ 事件一 → 完成 → 事件二（解锁）→ 完成 → 展柜。截图输出到 `D:/Unity2D/Build/25Hours/selftest`，坐标写入 Player.log。加 `-fps` 可同时记录帧率。
+流程：出生 → 平地跳 → 斜坡跳 → 下楼梯到 B1 → 试事件二的门（锁着）→ 进事件一 → 完成回避难所 → 事件二门解锁 → 进事件二 → 完成。11 张图输出到 `D:/Unity2D/Build/25Hours/selftest`。
 
-## 7. 性能与手感
+## 性能
 
-- `AppBoot` 在启动时设 `vSyncCount = 1`、`fixedDeltaTime = 1/60`
-- 玩家刚体使用插值 + 连续碰撞检测
-- HUD 提示只在文字变化时更新，避免每帧重建 UGUI 文字网格
-- 相机平滑时间 0.08s
+- 物理固定步长 `1/60`（`AppBoot`）
+- 提示文字只在变化时更新，避免 UGUI 每帧重建
+- 相机 `smoothTime = 0.08`
 
-## 8. 字体
+## 字体
 
-中文 UI 使用系统字体 SimHei。仓库不包含字体文件，`WhiteBoxArt.EnsureFont` 会在重建时从 `C:\Windows\Fonts\simhei.ttf` 复制一份到 `Assets/Fonts`。更换字体时同步修改该方法的源路径与 `WhiteBoxUI.Font` 的加载路径。
+`Assets/Fonts/SimHei.ttf` 不进仓库，构建时从 `C:\Windows\Fonts\simhei.ttf` 复制。换字体改 `WhiteBoxArt.FontAssetPath`。
