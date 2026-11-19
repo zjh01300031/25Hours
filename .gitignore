@@ -9,7 +9,7 @@
 [Mm]emoryCaptures/
 [Rr]ecordings/
 
-# 生成出来的工程文件
+# IDE / 工程文件
 *.csproj
 *.unityproj
 *.sln
@@ -31,7 +31,6 @@
 Thumbs.db
 .DS_Store
 
-# 字体：SimHei 是 Windows 自带字体，不再分发；
-# 生成器 WhiteBoxArt.EnsureFont 会自动从 C:\Windows\Fonts\simhei.ttf 复制一份进来
-Assets/Fonts/*.ttf
-Assets/Fonts/*.otf
+# 字体：SimHei 为 Windows 自带字体，不随仓库分发；
+# 生成器 WhiteBoxArt.EnsureFont 会自动从 C:\Windows\Fonts\simhei.ttf 复制
+Assets/Fonts/
