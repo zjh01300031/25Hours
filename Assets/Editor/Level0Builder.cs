@@ -25,19 +25,12 @@ public static class Level0Builder
     const int GroundLayer = 8;
     const int InteractableLayer = 9;
 
-    // 1F 地面 x 从 -6 到 16；B1 地面 x 从 -22 到 -11；楼梯连接 (-6,0) 与 (-11,-6)
-    const float OneFFloorTop = 0f;
-    const float BOneFloorTop = -6f;
-    const float StairTopX = -6f;
-    const float StairBottomX = -11f;
+    public const string PrefabDir = "Assets/Prefabs";
 
-    static Color colorFloor = new Color(0.72f, 0.74f, 0.77f);
-    static Color colorWall = new Color(0.38f, 0.40f, 0.44f);
-    static Color colorStair = new Color(0.30f, 0.32f, 0.36f);
     static Color colorPlayer = new Color(0.86f, 0.30f, 0.26f);
     static Color colorDoor = new Color(0.62f, 0.56f, 0.42f);
 
-    [MenuItem("工具/25小时/重建第0层（框架）", false, 1)]
+    [MenuItem("工具/25小时/重建场景骨架（只有功能）", false, 1)]
     public static void BuildAll()
     {
         EnsureFolder(SceneDir);
@@ -54,6 +47,38 @@ public static class Level0Builder
 
         AssetDatabase.SaveAssets();
         Debug.Log("[25Hours] 第0层框架搭建完成：" + ShelterScenePath);
+    }
+
+    [MenuItem("工具/25小时/导出预制体（玩家 / 事件门 / 拾取物）", false, 2)]
+    public static void ExportPrefabs()
+    {
+        EnsureFolder(PrefabDir);
+        WhiteBoxArt.Prepare();
+        WhiteBoxUI.Load();
+        SetupLayers();
+
+        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+        // 玩家要一个相机跟随目标，导出后相机本身丢掉
+        var camGo = new GameObject("tmp_camera", typeof(Camera), typeof(CameraRig2D));
+        var rig = camGo.GetComponent<CameraRig2D>();
+
+        var player = BuildPlayer(null, rig);
+        PrefabUtility.SaveAsPrefabAsset(player.gameObject, PrefabDir + "/玩家.prefab");
+        Object.DestroyImmediate(player.gameObject);
+
+        var door = BuildDoor(null, "事件门", 0f, 0f, 1.2f, 2.6f, "", null, null, null, null);
+        PrefabUtility.SaveAsPrefabAsset(door.gameObject, PrefabDir + "/事件门.prefab");
+        Object.DestroyImmediate(door.gameObject);
+
+        var item = BuildPickup(null, "拾取物", 0f, 0f, "item_01", null);
+        PrefabUtility.SaveAsPrefabAsset(item.gameObject, PrefabDir + "/拾取物.prefab");
+        Object.DestroyImmediate(item.gameObject);
+
+        Object.DestroyImmediate(camGo);
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log("[25Hours] 预制体已导出：" + PrefabDir);
     }
 
     // ------------------------------------------------------------------
@@ -83,75 +108,22 @@ public static class Level0Builder
 
         var world = new GameObject("World").transform;
 
-        var structure = Group(world, "01_结构");
-        BuildStructure(structure);
-
-        var characters = Group(world, "02_角色");
+        var characters = Group(world, "01_玩家");
         var player = BuildPlayer(characters, rig);
 
-        // 物品留给人来添加：拖一个空物体进这个分组，加 CircleCollider2D(Is Trigger) + PickupItem 即可。
-        // 生成器不再摆任何拾取物，免得和关卡设计打架。
-        var items = Group(world, "03_物品");
-
-        var doors = Group(world, "04_门");
-        BuildDoor(doors, "门·事件一", 15.0f, 1.3f, 1.2f, 2.6f,
-            "event_01", null, "door01.enter", null, "door01.cleared");
-        BuildDoor(doors, "门·事件二", -21.0f, -4.7f, 1.2f, 2.6f,
-            "event_02", "event_01", "door02.enter", "door02.locked", null);
-
-        // 事件登记表：id → 场景名。加事件就在 Inspector 里加一条。
-        var systems = Group(world, "05_系统");
+        // 关卡内容（地面、墙、楼梯、门、物品）不再生成，全部留给项目里的人手搭。
+        // 需要现成形式就用菜单「导出预制体」，拖进自己的场景。
+        var systems = Group(world, "02_系统");
         var catalogGo = new GameObject("事件登记表", typeof(EventCatalog));
         catalogGo.transform.SetParent(systems, false);
         var catalog = catalogGo.GetComponent<EventCatalog>();
         catalog.events.Add(new EventInfo { id = "event_01", displayName = "事件一", sceneName = SceneNames.Event01 });
         catalog.events.Add(new EventInfo { id = "event_02", displayName = "事件二", sceneName = SceneNames.Event02 });
 
-        var tester = new GameObject("自测", typeof(ShelterSelfTest));
-        tester.transform.SetParent(systems, false);
-
         BuildUI(player);
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ShelterScenePath);
-    }
-
-    static void BuildStructure(Transform parent)
-    {
-        // 1F：地板 + 右墙（左边是楼梯口，不砌墙，走过去就是斜坡）
-        Box(parent, "1F_地板", 5f, OneFFloorTop - 0.4f, 22f, 0.8f, colorFloor);
-        Box(parent, "1F_右墙", 16.3f, 4.1f, 0.6f, 9f, colorWall);
-
-        // B1：地板 + 左墙
-        Box(parent, "B1_地板", -16.5f, BOneFloorTop - 0.4f, 11f, 0.8f, colorFloor);
-        Box(parent, "B1_左墙", -22.3f, -2.1f, 0.6f, 8.6f, colorWall);
-
-        // 楼梯：13 级视觉台阶，真正给玩家走的是下面那条看不见的斜坡
-        var stairs = Group(parent, "楼梯");
-        const int steps = 13;
-        float stepH = (OneFFloorTop - BOneFloorTop) / steps;
-        float stepW = (StairBottomX - StairTopX) / steps;
-        for (int i = 0; i < steps; i++)
-        {
-            float top = OneFFloorTop - stepH * (i + 1);
-            float left = StairTopX + stepW * i;
-            Box(stairs, "台阶_" + (i + 1).ToString("00"),
-                left + stepW * 0.5f, top - stepH * 0.5f,
-                Mathf.Abs(stepW) * 1.7f, stepH * 1.9f, colorStair, false);
-        }
-
-        var ramp = new GameObject("楼梯_斜坡碰撞");
-        ramp.transform.SetParent(stairs, false);
-        var start = new Vector2(StairTopX, OneFFloorTop);
-        var end = new Vector2(StairBottomX, BOneFloorTop);
-        var delta = end - start;
-        var up = new Vector2(-delta.y, delta.x).normalized;
-        if (up.y < 0f) up = -up;
-        ramp.transform.position = (start + end) * 0.5f - up * 0.15f;
-        ramp.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
-        ramp.layer = GroundLayer;
-        var rampCollider = ramp.AddComponent<BoxCollider2D>();
-        rampCollider.size = new Vector2(delta.magnitude, 0.3f);
     }
 
     static ShelterPlayer BuildPlayer(Transform parent, CameraRig2D rig)
@@ -314,24 +286,6 @@ public static class Level0Builder
     // 工具
     // ------------------------------------------------------------------
 
-    static GameObject Box(Transform parent, string name, float cx, float cy, float w, float h, Color color, bool collider = true)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        go.transform.position = new Vector3(cx, cy, 0f);
-
-        // 图挂在子物体上：碰撞体的尺寸用世界尺寸写死，不受视觉缩放影响
-        Visual(go.transform, color, w, h, 0);
-
-        if (collider)
-        {
-            var box = go.AddComponent<BoxCollider2D>();
-            box.size = new Vector2(w, h);
-        }
-        go.layer = GroundLayer;
-        return go;
-    }
-
     static SpriteRenderer Visual(Transform parent, Color color, float w, float h, int order)
     {
         var go = new GameObject("图");
@@ -470,21 +424,21 @@ public static class Level0Builder
     // 验收
     // ------------------------------------------------------------------
 
-    [MenuItem("工具/25小时/打开第0层并运行", false, 2)]
+    [MenuItem("工具/25小时/打开第0层并运行", false, 10)]
     public static void OpenAndPlay()
     {
         EditorSceneManager.OpenScene(ShelterScenePath);
         EditorApplication.delayCall += () => EditorApplication.isPlaying = true;
     }
 
-    [MenuItem("工具/25小时/重建并截图", false, 3)]
+    [MenuItem("工具/25小时/重建并截图", false, 11)]
     public static void RebuildAndPreview()
     {
         BuildAll();
         CapturePreviews();
     }
 
-    [MenuItem("工具/25小时/一键：重建 + 截图 + 打包", false, 4)]
+    [MenuItem("工具/25小时/一键：重建 + 截图 + 打包", false, 12)]
     public static void BuildEverything()
     {
         BuildAll();
@@ -506,10 +460,8 @@ public static class Level0Builder
         Directory.CreateDirectory(ShotDir);
         var original = cam.transform.position;
 
-        Shot(cam, new Vector3(6f, 2f, -10f), ShotDir + "/01-floor-1f.png");
-        Shot(cam, new Vector3(-8f, -2f, -10f), ShotDir + "/02-stairs.png");
-        Shot(cam, new Vector3(-17f, -4f, -10f), ShotDir + "/03-floor-b1.png");
-        Shot(cam, new Vector3(0f, 2f, -10f), ShotDir + "/04-spawn.png");
+        // 骨架里没有关卡内容，只拍一张出生视角，关卡搭起来以后可以自己加机位
+        Shot(cam, new Vector3(0f, 2f, -10f), ShotDir + "/00-skeleton.png");
 
         cam.transform.position = original;
         Debug.Log("[25Hours] 预览图：" + ShotDir);
