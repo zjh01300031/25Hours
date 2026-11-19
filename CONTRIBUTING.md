@@ -1,96 +1,70 @@
-# 给队友：怎么一起改这个工程
+# 参与开发
 
-这份文档写给被加成 collaborator 的同学。目标是：**clone 下来能跑、改了能推、别把别人手改的场景冲掉**。
+## 环境
 
----
+- Unity `2022.3.62f3c1`（必须一致，跨版本会导致场景与材质序列化差异）
+- 内置渲染管线，项目未使用 URP
+- Windows + Visual Studio / Rider 均可
 
-## 0. 你需要什么
+克隆后在 Unity Hub 中添加该目录并打开。
 
-| 需要 | 说明 |
-| --- | --- |
-| Unity **2022.3.62f3c1** | 版本必须一致，差小版本也尽量一致；Hub 里装这个版本 |
-| Git | Windows 装 Git for Windows 就行 |
-| 权限 | 仓库 owner 会把你加成 collaborator（Settings → Collaborators） |
+## 场景说明
 
-## 1. 拿到工程
+| 场景 | 用途 | 维护者 |
+| --- | --- | --- |
+| `Assets/Scenes/Shelter_L0.unity` | 第 0 层避难所，白盒 | 白盒生成脚本 |
+| `Assets/Scenes/Event_01.unity` | 事件一，空模板 | 事件 / 棋盘负责人 |
+| `Assets/Scenes/Event_02.unity` | 事件二，空模板 | 事件 / 棋盘负责人 |
 
-```bash
-git clone https://github.com/zjh01300031/25Hours.git
-```
+`Shelter_L0`、`Event_01`、`Event_02` 由编辑器脚本生成，重新生成会覆盖手改内容。需要长期保留的改动请另存为新场景，或修改生成脚本。
 
-或者网页上 **Code → Download ZIP**（这样不能 push，只能自己玩）。
+## 不要手改的部分
 
-然后 Unity Hub → **Add** → 选 `25Hours` 这个文件夹。第一次打开会自动导入，大概一两分钟。
+- `Assets/Art/`：全部占位图由 `WhiteBoxArt.cs` 生成，手改会在下次重建时丢失。需要换图请改生成脚本，或改用独立目录
+- `Assets/Fonts/`：SimHei 为系统字体，不随仓库分发；重建时会自动从系统复制
+- `ProjectSettings/TagManager.asset` 中的层：`8 = Ground`、`9 = Interactable`，新增层请从 10 起
 
-> `Library/`、`Temp/`、`Logs/`、`Build/` 都在 `.gitignore` 里，不会进仓库，也不会互相覆盖。
+## 白盒修改流程
 
-## 2. 打开哪几个场景
+1. 修改 `Assets/Editor/Level0Builder.cs`（布局 / 坐标）或 `WhiteBoxArt.cs`（贴图）
+2. Unity 菜单 `工具 / 25小时 / 重建第0层（白盒）`
+3. 运行自测确认流程正常（见下）
+4. 提交时一并带上场景文件与 `docs/` 下的截图
 
-| 场景 | 用途 |
-| --- | --- |
-| `Assets/Scenes/Shelter_L0.unity` | **主场景**，第 0 层避难所（1F + 楼梯井 + B1） |
-| `Assets/Scenes/Event_01.unity` | 事件一（现在只有模板说明） |
-| `Assets/Scenes/Event_02.unity` | 事件二（现在只有模板说明） |
+如需在编辑器里临时调整，使用 `工具 / 25小时 / 白盒工具箱`（网格对齐、加平台、打开场景）。
 
-旧场景 `Board` / `LevelL1_1` / `MapBoard` / `SampleScene` 是更早的原型，**不要改也不要删**，先放着。
-
-## 3. 三条不能碰的线
-
-1. **`Assets/Art/` 是生成物**，别手改里面的 png，改了下次重建会被覆盖。要换美术请改 `Assets/Editor/WhiteBoxArt.cs`。
-2. **菜单「工具 → 25小时 → 重建第0层（白盒）」会整个重写** `Shelter_L0` / `Event_01` / `Event_02` 三个场景。想保留手改的结果，请**先另存**成 `Shelter_L0_dev.unity` 之类的名字，或者只改不重建。
-3. **中文字体不进仓库**：`Assets/Fonts/SimHei.ttf` 是 Windows 自带的黑体，版权上不适合再分发。生成器 `WhiteBoxArt.EnsureFont()` 会自动从 `C:\Windows\Fonts\simhei.ttf` 复制一份到工程里。别的系统没有这个文件的话，换一个 ttf 并改 `EnsureFont()` 里的路径。
-
-## 4. 改东西的约定（避免互相踩）
-
-- **一个场景一个人改**：Unity 的场景/预制体是 YAML 文本，两个人同时改同一个 `.unity` 基本一定冲突。要并行就分场景、分物体改，或者先商量谁改哪块。
-- 提交前先 `git pull --rebase`，推之前再拉一次。
-- 提交信息写清楚的动词开头：`改楼梯坡度`、`加一盏 B1 壁灯`、`修事件二门的贴图`。
-- 大文件（视频、大图、压缩包）不要进仓库，仓库里已经有一个 31MB 的可运行包，再加就劝退了。
-
-### 建议开启 Unity 的 Smart Merge（YAML 合并工具）
-
-```ini
-# C:\Users\<你>\.gitconfig
-[merge]
-	tool = unityyamlmerge
-[mergetool "unityyamlmerge"]
-	trustExitCode = false
-	cmd = '"D:/Unity2D/_install/2022.3.62f3c1/Editor/Data/Tools/UnityYAMLMerge.exe"' merge -p "$BASE" "$REMOTE" "$LOCAL" "$MERGED"
-```
-
-```bash
-git config --global merge.tool unityyamlmerge
-```
-
-外加把 `*.unity merge=unityyamlmerge`、`*.prefab merge=unityyamlmerge` 写进 `.gitattributes`（仓库里已有这份文件，需要的话直接加两行）。
-
-## 5. 代码在哪
-
-| 目录 | 内容 |
-| --- | --- |
-| `Assets/Scripts/` | 运行时脚本：玩家、交互、事件门、进度、对话、HUD、自测 |
-| `Assets/Editor/` | 编辑器脚本：白盒生成器（`Level0Builder`）、占位图生成（`WhiteBoxArt`）、UI 工具（`WhiteBoxUI`）、工具箱窗口（`WhiteBoxWindow`） |
-
-接事件/棋盘请看 [`README_事件接入.md`](README_事件接入.md)；白盒怎么微调看 [`README_第0层白盒.md`](README_第0层白盒.md)。
-
-## 6. 自测一下再推
+## 自测
 
 ```powershell
-# 重新生成场景 + 预览 + Windows 包
-Unity.exe -batchmode -quit -projectPath <工程路径> -executeMethod Level0Builder.BuildEverything -logFile build.log
+& "D:\Unity2D\_install\2022.3.62f3c1\Editor\Unity.exe" -batchmode -quit `
+  -projectPath "D:\Unity2D\Projects\25Hours" `
+  -executeMethod Level0Builder.BuildEverything -logFile build.log
 
-# 或者直接跑打包版自测
-25Hours.exe -selftest -screen-width 1280 -screen-height 720 -screen-fullscreen 0
+& "D:\Unity2D\Build\25Hours\25Hours.exe" -selftest `
+  -screen-width 1280 -screen-height 720 -screen-fullscreen 0
 ```
 
-日志里出现 `error CS` 就说明有编译错误；自测会在 `%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\Player.log` 留一份记录。
+期望结果：`build.log` 含 `构建结果：Succeeded` 且无 `error CS`；自测截图 15 张，Player.log 中 B1 行走落点为地板高度、两个事件均可完成、门锁状态正确。
 
-## 7. 推上去
+## 提交
 
-```bash
-git add -A
-git commit -m "改了什么"
-git push
+- 提交信息用中文，格式 `模块: 做了什么`，例如 `Shelter: 修正楼梯落地判定`
+- 一次提交只做一件事
+- 不要提交 `Library/`、`Temp/`、`Logs/`、`*.csproj`、`*.sln`、字体文件（已在 `.gitignore`）
+
+## 合并冲突
+
+场景与预制体是 YAML，冲突时使用 Unity 的 Smart Merge：
+
+```powershell
+git config merge.unityyamlmerge.name "Unity SmartMerge"
+git config merge.unityyamlmerge.driver '"D:/Unity2D/_install/2022.3.62f3c1/Editor/Data/Tools/UnityYAMLMerge.exe" merge -p %O %A %B %L %P'
 ```
 
-没有 push 权限就是还没被加成 collaborator，找 owner 加一下。
+在 `.gitattributes` 中已声明 `*.unity`、`*.prefab` 等为文本，按上述驱动合并。冲突后请在 Unity 中重新打开场景确认。
+
+## 目录约定
+
+- 运行时脚本：`Assets/Scripts/`，一个类一个文件，文件名与类名一致
+- 编辑器脚本：`Assets/Editor/`，只能引用 UnityEditor
+- 文档：`docs/`，截图放 `docs/preview`（静态预览）与 `docs/selftest`（自测流程）
