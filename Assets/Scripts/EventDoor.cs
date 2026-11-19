@@ -18,21 +18,14 @@ public class EventDoor : InteractableBase
     [Tooltip("开门前说的话（留空就直接进）")]
     public string[] enterLines;
 
-    [Tooltip("门还锁着的时候说的话")]
-    public string[] lockedLines =
-    {
-        "门纹丝不动。锁孔里没有光。"
-    };
+    [Tooltip("门还锁着的时候说的话（留空就只给 toast 提示）")]
+    public string[] lockedLines;
 
     [Tooltip("这个事件已经完成过以后说的话")]
     public string[] clearedLines;
 
     [Tooltip("登记表里没有 / 场景没进 Build Settings 时说的话")]
-    public string[] missingLines =
-    {
-        "（门后面什么也没接上。）",
-        "（把事件场景拖进 Build Settings，再在「事件登记表」里加一条。）"
-    };
+    public string[] missingLines;
 
     [Header("门的样子")]
     [Tooltip("真正显示门的那张图的 SpriteRenderer（留空会自动在子物体里找「图」）")]
@@ -117,6 +110,7 @@ public class EventDoor : InteractableBase
         if (string.IsNullOrEmpty(scene))
         {
             ShowLines(missingLines);
+            if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("（这扇门后面还没接事件）");
             return;
         }
 

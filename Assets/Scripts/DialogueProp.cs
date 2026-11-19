@@ -15,6 +15,15 @@ public class DialogueProp : InteractableBase
         var progress = GameProgress.Instance;
         bool after = progress != null && progress.IsEventCleared(watchEventId)
                      && linesAfterEvent != null && linesAfterEvent.Length > 0;
-        if (ShelterDialogue.Instance != null) ShelterDialogue.Instance.Show(displayName, after ? linesAfterEvent : lines);
+
+        string[] use = after ? linesAfterEvent : lines;
+        if (use != null && use.Length > 0 && ShelterDialogue.Instance != null)
+        {
+            ShelterDialogue.Instance.Show(displayName, use);
+            return;
+        }
+
+        // 剧情文字之后再补：现在只给一个中性的占位反馈
+        if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("（这段文字之后再加）");
     }
 }

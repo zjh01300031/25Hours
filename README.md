@@ -1,4 +1,4 @@
-﻿# 第 25 小时 · 第 0 层白盒（Shelter L0）
+# 第 25 小时 · 第 0 层白盒（Shelter L0）
 
 一句「一天里的第 25 小时」的项目，这是它的第一块可玩白盒：**避难所 1 区**，2D 横版，1F + 楼梯井 + B1 三层空间。
 
@@ -55,6 +55,23 @@ Unity **2022.3.62f3c1** · URP 未启用（内置管线）· 全部美术是代�
 public bool IsLocked =>
     !string.IsNullOrEmpty(requiresEventId) && !GameProgress.Ensure().IsEventCleared(requiresEventId);
 ```
+
+## 文字 / 剧情（现在全部留空，之后再加）
+
+这一版只搭场景和交互，**所有剧情台词都清空了**，交互只给中性的功能反馈：
+
+| 交互 | 现在的反馈 |
+| --- | --- |
+| 6 个碎片 | 右上角计数 + toast「碎片 n / 6」 |
+| 人偶 / 展柜 / 回声匣 | toast「（这段文字之后再加）」 |
+| 门还锁着 | toast「门锁着 · 要先完成前置事件」 |
+| 门开着 | 直接进事件场景（不弹对话） |
+| 门后没接事件 | toast「（这扇门后面还没接事件）」 |
+
+之后要补文字，任选一种：
+
+1. **直接在场景里填**：选中物体，填 `DialogueProp.lines` / `linesAfterEvent`、`FragmentPickup.lines`、`EventDoor.lockedLines / enterLines / clearedLines`（`lines` 一有内容，交互就自动弹对话框）。
+2. **改生成器**：`Assets/Editor/Level0Builder.cs` 的 `BuildInteractables()` 里加台词数组。注意重建（`工具/25小时/一键：重建 + 截图 + 打包`）会用生成器的内容覆盖场景里手填的东西。
 
 ## 给事件 / 棋盘负责人的接入点
 

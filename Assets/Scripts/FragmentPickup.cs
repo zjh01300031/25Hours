@@ -11,7 +11,10 @@ public class FragmentPickup : InteractableBase
         var progress = GameProgress.Ensure();
         progress.AddFragment(fragmentId);
 
-        if (ShelterDialogue.Instance != null) ShelterDialogue.Instance.Show(displayName, lines);
+        if (lines != null && lines.Length > 0 && ShelterDialogue.Instance != null)
+        {
+            ShelterDialogue.Instance.Show(displayName, lines);
+        }
 
         if (ShelterHUD.Instance != null)
         {

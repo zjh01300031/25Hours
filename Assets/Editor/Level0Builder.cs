@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -283,89 +283,28 @@ public static class Level0Builder
     {
         // ---- 1F ----
         var display = MakeInteractable<DialogueProp>(parent, "展柜", 4.4f, 1.5f, 1.3f, 2.4f, "display_case", 5, "查看");
-        display.lines = new[]
-        {
-            "展柜里站着一个人偶。它没有脸，胸口有一道很浅的裂缝。",
-            "玻璃上有一层薄灰。你擦了一下，灰又慢慢落回来。"
-        };
-        display.linesAfterEvent = new[]
-        {
-            "展柜里现在有两个人偶了。",
-            "新来的那个，胸前亮着一粒小小的光。"
-        };
 
         var crate = MakeInteractable<FragmentPickup>(parent, "纸箱", 5.6f, 0.5f, 1.0f, 1.0f, "crate", 4, "翻找");
         crate.fragmentId = "frag_01";
-        crate.lines = new[]
-        {
-            "纸箱里塞着一叠没寄出去的信。收件人那一栏，全是空白。",
-            "最上面那封的日期写着「第 25 小时」。"
-        };
 
         var cabinet = MakeInteractable<FragmentPickup>(parent, "柜子", 7.6f, 0.9f, 1.1f, 1.8f, "cabinet", 3, "打开");
         cabinet.fragmentId = "frag_02";
-        cabinet.lines = new[]
-        {
-            "柜门开着一条缝。里面挂着三件一样的旧外套。",
-            "袖口都磨破了，像是同一个人穿了很多年。"
-        };
 
         var echoBox = MakeInteractable<DialogueProp>(parent, "回声匣", 10.2f, 1.2f, 0.55f, 0.55f, "item_glow", 6, "查看");
-        echoBox.lines = new[]
-        {
-            "一只旧木匣，表面刻着一圈一圈的波纹。你把手放上去，匣子里传来很轻的回声。",
-            "匣子只是收声音的，不会带你去别的地方。",
-            "「门在东边一扇，楼梯下面还有一扇。」"
-        };
-        echoBox.linesAfterEvent = new[]
-        {
-            "匣子安静地亮着，回声散了。",
-            "「深处的门开了。你听见了吗？」"
-        };
 
         // 事件一的门：第 0 层东墙，一开始就能进
         var door1 = MakeInteractable<EventDoor>(parent, "门·事件一", 16.2f, 1.35f, 1.4f, 2.7f, "door_event", 4, "进入");
         door1.eventId = "event_01";
         door1.doorRenderer = door1.GetComponentInChildren<SpriteRenderer>();
         door1.unlockedSprite = LoadSprite("door_event");
-        door1.enterLines = new[]
-        {
-            "一扇边框磨得发亮的门。门后传来很轻的、像水一样的回声。",
-            "你把手放在门上。"
-        };
-        door1.clearedLines = new[]
-        {
-            "门后的回声已经平了。只剩下你自己的脚步。"
-        };
 
         var doll1 = MakeInteractable<DialogueProp>(parent, "人偶", 12.8f, 0.62f, 0.7f, 1.2f, "npc_doll", 5, "对话");
-        doll1.lines = new[]
-        {
-            "（人偶转向你，关节发出很轻的咔哒声。）",
-            "「你也是被留在这里的吗？」",
-            "「下面的门还没醒。别硬开它。」"
-        };
-        doll1.linesAfterEvent = new[]
-        {
-            "「你把它点亮了。」",
-            "「……那我也该醒了吧。」"
-        };
 
         var shelf = MakeInteractable<FragmentPickup>(parent, "书架", 14.6f, 0.6f, 1.4f, 1.2f, "cabinet", 3, "翻找");
         shelf.fragmentId = "frag_03";
-        shelf.lines = new[]
-        {
-            "书脊上的字被水泡花了，只剩一本还看得清：《如何听见自己》。",
-            "翻开第一页，只有一句：「先别急着说话。」"
-        };
 
         var jar = MakeInteractable<FragmentPickup>(parent, "玻璃罐", 14.6f, 1.4f, 0.4f, 0.4f, "crate", 6, "查看");
         jar.fragmentId = "frag_04";
-        jar.lines = new[]
-        {
-            "高处放着一只玻璃罐，里面装着几粒很轻的灰。",
-            "罐底贴着小纸条：「昨天的回声，留一点。」"
-        };
 
         // ---- B1 ----
         var warn = new GameObject("2区_警示光");
@@ -384,47 +323,14 @@ public static class Level0Builder
         door2.lockedSprite = LoadSprite("door_locked");
         door2.unlockedSprite = LoadSprite("door_event");
         door2.statusGlow = warnSr;
-        door2.lockedLines = new[]
-        {
-            "门缝里没有光。你推了推，门后是实心的黑。",
-            "「先让东边那扇醒过来。」"
-        };
-        door2.enterLines = new[]
-        {
-            "门现在虚掩着，暖光从缝里漏出来。",
-            "你推开门。"
-        };
-        door2.clearedLines = new[]
-        {
-            "门后是一条安静的回廊。你已经走完一遍了。"
-        };
 
         var drawer = MakeInteractable<FragmentPickup>(parent, "抽屉柜", -7.6f, -7.1f, 1.3f, 1.8f, "cabinet", 3, "打开");
         drawer.fragmentId = "frag_06";
-        drawer.lines = new[]
-        {
-            "抽屉里整整齐齐码着七颗纽扣。",
-            "第八颗不见了。你在柜脚边找到了它。"
-        };
 
         var doll2 = MakeInteractable<DialogueProp>(parent, "人偶", -9.8f, -7.4f, 0.7f, 1.2f, "npc_doll", 5, "对话");
-        doll2.lines = new[]
-        {
-            "「这里是第 25 小时。钟不会走，但你会。」",
-            "「想出去的话，先把碎掉的地方拼起来。」"
-        };
-        doll2.linesAfterEvent = new[]
-        {
-            "「听见了吗？上面有声音了。」"
-        };
 
         var radio = MakeInteractable<FragmentPickup>(parent, "旧收音机", -12.2f, -7.55f, 0.9f, 0.7f, "crate", 4, "查看");
         radio.fragmentId = "frag_05";
-        radio.lines = new[]
-        {
-            "收音机没有插电，却在很轻地响。",
-            "……沙沙……沙……（像有人在很远的地方喊你）"
-        };
 
         // 展柜里本来就有的那个人偶（玻璃是半透明的，人偶放在柜子里、order 4 会被玻璃盖住一点）
         var caseDoll = new GameObject("人偶_展柜内");
@@ -563,12 +469,12 @@ public static class Level0Builder
         Box(parent, "门框_事件二_上", -4.0f, -5.05f, 1.66f, 0.22f, "block_dark", 2, false);
 
         // ---- B1 杂物 ----
-        Box(parent, "线缆盘", -13.05f, -7.5f, 0.9f, 1.0f, "block_dark", 2);
+        Box(parent, "线缆盘", -13.05f, -7.5f, 0.9f, 1.0f, "block_dark", 2, false);
         Box(parent, "线缆盘_芯", -13.05f, -7.5f, 0.32f, 0.32f, "block_black", 3, false);
         Box(parent, "挂架_B1", -11.0f, -2.7f, 1.8f, 0.12f, "block_dark", 1, false);
         Box(parent, "挂架_B1_物", -11.35f, -3.2f, 0.5f, 0.9f, "block_black", 1, false);
-        Box(parent, "木箱_B1", -6.15f, -7.55f, 0.9f, 0.9f, "crate", 2);
-        Box(parent, "木箱_B1_上", -6.15f, -6.65f, 0.62f, 0.62f, "crate", 2);
+        Box(parent, "木箱_B1", -6.15f, -7.55f, 0.9f, 0.9f, "crate", 2, false);
+        Box(parent, "木箱_B1_上", -6.15f, -6.65f, 0.62f, 0.62f, "crate", 2, false);
     }
 
     /// <summary>前景层：压在镜头和角色之间的一层剪影，制造纵深（sortingOrder 30）。</summary>
