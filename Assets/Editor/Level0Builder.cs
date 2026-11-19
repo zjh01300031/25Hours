@@ -28,7 +28,8 @@ public static class Level0Builder
     public const string PrefabDir = "Assets/Prefabs";
 
     static Color colorPlayer = new Color(0.86f, 0.30f, 0.26f);
-    static Color colorDoor = new Color(0.62f, 0.56f, 0.42f);
+    static Color colorDoor = new Color(0.52f, 0.68f, 0.92f);
+    static Color colorPickup = new Color(0.96f, 0.82f, 0.42f);
 
     [MenuItem("工具/25小时/重建场景骨架（只有功能）", false, 1)]
     public static void BuildAll()
@@ -171,8 +172,6 @@ public static class Level0Builder
 
         var sr = Visual(root.transform, colorDoor, w, h, 4);
 
-        var glowSr = Visual(root.transform, new Color(1f, 1f, 1f, 0.06f), w * 1.8f, h * 1.25f, 3);
-
         var trigger = root.AddComponent<CircleCollider2D>();
         trigger.isTrigger = true;
         trigger.radius = 1.0f;
@@ -186,7 +185,6 @@ public static class Level0Builder
         door.lockedStoryId = lockedStoryId;
         door.clearedStoryId = clearedStoryId;
         door.doorRenderer = sr;
-        door.statusGlow = glowSr;
         return door;
     }
 
@@ -197,7 +195,7 @@ public static class Level0Builder
         root.transform.position = new Vector3(cx, cy, 0f);
         root.layer = InteractableLayer;
 
-        Visual(root.transform, new Color(0.95f, 0.82f, 0.45f), 0.5f, 0.5f, 6);
+        Visual(root.transform, colorPickup, 0.5f, 0.5f, 6);
 
         var trigger = root.AddComponent<CircleCollider2D>();
         trigger.isTrigger = true;
@@ -288,17 +286,15 @@ public static class Level0Builder
 
     static SpriteRenderer Visual(Transform parent, Color color, float w, float h, int order)
     {
-        var go = new GameObject("图");
-        go.transform.SetParent(parent, false);
-
-        var sr = go.AddComponent<SpriteRenderer>();
+        // 图直接挂在物体自己身上，不再多一层「图」子物体
+        var go = parent.gameObject;
+        var sr = go.GetComponent<SpriteRenderer>();
+        if (sr == null) sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = WhiteBoxArt.Square;
         sr.color = color;
         sr.sortingOrder = order;
-
-        float unit = sr.sprite != null ? sr.sprite.bounds.size.x : 1f;
-        if (unit <= 0.0001f) unit = 1f;
-        go.transform.localScale = new Vector3(w / unit, h / unit, 1f);
+        sr.drawMode = SpriteDrawMode.Sliced;
+        sr.size = new Vector2(w, h);
         return sr;
     }
 
@@ -423,6 +419,35 @@ public static class Level0Builder
     // ------------------------------------------------------------------
     // 验收
     // ------------------------------------------------------------------
+
+    [MenuItem("工具/25小时/清空存档（物品会重新出现）", false, 41)]
+    public static void ClearProgress()
+    {
+        var path = GameProgress.SavePath;
+        if (File.Exists(path)) File.Delete(path);
+        Debug.Log("[25Hours] 已删除存档：" + path + "（下次运行物品会重新出现、门回到上锁状态）");
+    }
+
+    [MenuItem("工具/25小时/修复丢失的精灵引用", false, 45)]
+    public static void RepairSprites()
+    {
+        var scene = EditorSceneManager.OpenScene(ShelterScenePath);
+        var sprite = WhiteBoxArt.Square;
+        int count = 0;
+
+        foreach (var sr in Object.FindObjectsOfType<SpriteRenderer>(true))
+        {
+            if (sr.sprite == null) { sr.sprite = sprite; count++; }
+        }
+        foreach (var img in Object.FindObjectsOfType<UnityEngine.UI.Image>(true))
+        {
+            if (img.sprite == null) { img.sprite = sprite; count++; }
+        }
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene, ShelterScenePath);
+        Debug.Log("[25Hours] 精灵引用修复：" + count + " 个");
+    }
 
     [MenuItem("工具/25小时/打开第0层并运行", false, 10)]
     public static void OpenAndPlay()

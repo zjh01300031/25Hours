@@ -48,7 +48,10 @@ public class GameProgress : MonoBehaviour
     readonly HashSet<string> clearedEvents = new HashSet<string>();
     readonly Dictionary<string, int> items = new Dictionary<string, int>();
 
-    bool saveEnabled = true;
+    [Tooltip("勾上才会把进度写进 progress.json、下次运行接着上次；不勾则每次运行都从头开始（物品会重新出现、门重新上锁）。")]
+    public bool persistProgress = false;
+
+    bool saveEnabled = false;
 
     public int FragmentCount { get { return fragments.Count; } }
 
@@ -69,7 +72,7 @@ public class GameProgress : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        saveEnabled = !HasCommandLine("-selftest");
+        saveEnabled = persistProgress && !HasCommandLine("-selftest");
         if (saveEnabled) Load();
     }
 

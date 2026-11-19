@@ -50,7 +50,7 @@ public static class WhiteBoxUI
         var rect = Node(name, parent, anchor, pivot, position, size);
         var image = rect.gameObject.AddComponent<Image>();
         image.sprite = PanelSprite;
-        image.type = Image.Type.Simple;
+        image.type = Image.Type.Sliced;
         image.color = color;
         return image;
     }
