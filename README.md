@@ -33,6 +33,8 @@ git clone git@github.com:zjh01300031/25Hours.git
 
 中文字体不进仓库：首次生成时 `Assets/Fonts/SimHei.ttf` 会从 `C:\Windows\Fonts\simhei.ttf` 自动复制；没有字体时 UI 中文会显示成方块。
 
+
+> 第一次用 Unity？看 [`docs/unity-guide.md`](docs/unity-guide.md)，从「摆一块地面」开始一步步教。
 ## 操作
 
 | 按键 | 作用 |
