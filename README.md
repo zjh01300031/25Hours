@@ -1,54 +1,61 @@
-# 第 25 小时 · 第 0 层白盒（Shelter L0）
+# 第25小时 · 第0层白盒
 
-一句「一天里的第 25 小时」的项目，这是它的第一块可玩白盒：**避难所 1 区**，2D 横版，1F + 楼梯井 + B1 三层空间。
+《第25小时》的 Unity 2D 项目，本仓库包含第 0 层「避难所 1 区」的可玩白盒场景。
 
-Unity **2022.3.62f3c1** · URP 未启用（内置管线）· 全部美术是代码生成的占位图，可以随时换。
+场景为单张横版场景，含 1F、楼梯井与 B1 两层空间：6 个可收集碎片、若干可查看的物件、两扇通向事件场景的门，以及「完成事件一后解锁事件二」的进度链。美术资源由编辑器脚本生成，为占位图；交互台词暂未填写，事件场景为空房间，供棋盘 / 事件玩法负责人接入。
 
-![1F](docs/preview/01_避难所1F.png)
+- Unity 版本：`2022.3.62f3c1`
+- 目标平台：Windows（Standalone）
+- 场景：`Shelter_L0`（第 0 层）、`Event_01`、`Event_02`（空模板）
 
----
+## 截图
+
+| 1F | B1 |
+| --- | --- |
+| ![1F](docs/preview/01-floor-1f.png) | ![B1](docs/preview/03-floor-b1.png) |
+
+| 楼梯井 | 出生点 |
+| --- | --- |
+| ![楼梯井](docs/preview/02-stairs.png) | ![出生点](docs/preview/04-spawn-camera.png) |
+
+更多过程截图见 `docs/selftest/`。
 
 ## 快速开始
 
-1. Unity Hub → Add → 选这个文件夹（`ProjectSettings/ProjectVersion.txt` 已经是 2022.3.62f3c1）
+```powershell
+git clone git@github.com:zjh01300031/25Hours.git
+```
+
+1. Unity Hub 添加 `25Hours` 目录，使用 Unity `2022.3.62f3c1` 打开
 2. 打开 `Assets/Scenes/Shelter_L0.unity`
-3. 点 Play
-4. 菜单 **工具 → 25小时 → 一键：重建 + 截图 + 打包** 可以从零重新生成全部场景、占位图、预览图和 Windows 包
+3. Play
 
-没有装 Unity 也能玩：解压 [`dist/25Hours_2_可运行包_Win64.zip`](dist/) 双击 `25Hours.exe`。
+首次导入时，`Assets/Fonts/SimHei.ttf` 会自动从 `C:\Windows\Fonts\simhei.ttf` 复制进来（仓库不包含字体文件），缺失时中文 UI 会显示为方块，执行一次 `工具 / 25小时 / 重建第0层（白盒）` 即可补齐。
 
-### 操作
+不安装 Unity 也可以直接运行 `dist/25Hours_2_可运行包_Win64.zip` 解压后的 `25Hours.exe`。
 
-| 键 | 作用 |
+## 操作
+
+| 按键 | 作用 |
 | --- | --- |
-| `A` `D` / `←` `→` | 移动（楼梯是隐形斜坡，自动贴合） |
-| `空格` | 跳跃 |
-| `E` | 交互（翻碎片 / 对话 / 进门） |
-| `E` / `空格` / 鼠标 | 对话继续 |
-| `Esc` | 关闭对话 |
+| `A` / `D`、`←` / `→` | 左右移动 |
+| `空格` | 跳跃（0.08s 土狼时间，0.1s 输入缓冲） |
+| `E` | 与最近的物件交互 |
+| `Esc` | 返回；在事件场景中直接回第 0 层 |
 
-## 这一层里有什么
-
-- **1F**：展柜（事件后多一个人偶）、纸箱、柜子、桌子 + 回声匣、人偶、书架 + 玻璃罐、东墙的 **门·事件一**
-- **楼梯井**：20 级台阶（纯视觉）+ 一条隐形斜坡碰撞
-- **B1**：工作台、旧收音机、人偶、抽屉柜、线缆盘、木箱，暗角里的 **门·事件二**
-- **6 个碎片** 散在两层，捡到会进右上角计数
-- **回声匣**只对话，不再直接把玩家传进事件
-- **两个事件场景是纯空房间**：只有相机 + `EventRoomTemplate`，连一个字都没有，留给事件负责人自己铺玩法（按 `E` 算完成、`Esc` 直接返回）
-
-### 两扇门与解锁链
+## 场景与流程
 
 ```
-出生 → 探索 1F / B1 → 捡碎片、看回声匣
-                    ↓
-             门·事件一（1F 东墙，随时能进）
-                    ↓ 完成事件一（棋盘点亮 → Complete()）
-             门·事件二 自动解锁（门片变暖光、门口光变金色）
-                    ↓
-             门·事件二（楼梯下暗角）
+1F ── 展柜 / 纸箱 / 柜子 / 桌子 · 回声匣 / 人偶 / 书架 · 玻璃罐 / 门 · 事件一（东墙）
+ │
+楼梯井 ── 20 级台阶（纯视觉）+ 隐形斜坡碰撞
+ │
+B1 ── 工作台 / 旧收音机 / 人偶 / 抽屉柜 / 线缆盘 / 木箱 / 门 · 事件二（暗角）
 ```
 
-解锁条件是门上的 `requiresEventId`，不需要写任何特殊判断：
+流程：出生 → 探索两层、收集碎片 → 进入「门 · 事件一」→ 在事件场景中调用 `Complete()` → 返回后「门 · 事件二」自动解锁 → 进入事件二。
+
+事件二的解锁条件写在门的 `requiresEventId` 字段上，不需要额外代码：
 
 ```csharp
 // Assets/Scripts/EventDoor.cs
@@ -56,92 +63,116 @@ public bool IsLocked =>
     !string.IsNullOrEmpty(requiresEventId) && !GameProgress.Ensure().IsEventCleared(requiresEventId);
 ```
 
-## 文字 / 剧情（现在全部留空，之后再加）
+## 仓库结构
 
-这一版只搭场景和交互，**所有剧情台词都清空了**，交互只给中性的功能反馈：
-
-| 交互 | 现在的反馈 |
-| --- | --- |
-| 6 个碎片 | 右上角计数 + toast「碎片 n / 6」 |
-| 人偶 / 展柜 / 回声匣 | toast「（这段文字之后再加）」 |
-| 门还锁着 | toast「门锁着 · 要先完成前置事件」 |
-| 门开着 | 直接进事件场景（不弹对话） |
-| 门后没接事件 | toast「（这扇门后面还没接事件）」 |
-
-之后要补文字，任选一种：
-
-1. **直接在场景里填**：选中物体，填 `DialogueProp.lines` / `linesAfterEvent`、`FragmentPickup.lines`、`EventDoor.lockedLines / enterLines / clearedLines`（`lines` 一有内容，交互就自动弹对话框）。
-2. **改生成器**：`Assets/Editor/Level0Builder.cs` 的 `BuildInteractables()` 里加台词数组。注意重建（`工具/25小时/一键：重建 + 截图 + 打包`）会用生成器的内容覆盖场景里手填的东西。
-
-## 给事件 / 棋盘负责人的接入点
-
-`Event_01.unity` / `Event_02.unity` 现在是空模板，棋盘玩法由别人接。三种接入路线、API 清单、命名与层级约定都写在
-**[README_事件接入.md](README_事件接入.md)**。
-
-核心就三条：
-
-```csharp
-public class 回声室棋盘 : EventRoomBase      // 1. 场景里挂一个继承它的脚本
-{
-    protected override void Start() { base.Start(); }
-
-    void 解谜成功() => Complete();            // 2. 点亮全部格子后调用：记录完成 + 回避难所
-    void 玩家退出() => Leave();               //    中途退出：不记录完成
-}
+```
+Assets/
+  Art/                 占位图（由脚本生成，勿手改）
+  Editor/              白盒生成器、工具箱、贴图生成
+  Scenes/              Shelter_L0 / Event_01 / Event_02
+  Scripts/             玩家、交互、进度、事件接入
+docs/
+  preview/             场景预览图
+  selftest/            自测流程截图
+  whitebox.md          白盒细节：分层、坐标、微调
+  event-integration.md 事件 / 棋盘玩法接入说明
+dist/
+  25Hours_2_可运行包_Win64.zip
+  25Hours_3_截图.zip
+  25Hours_4_白盒生成脚本.zip
 ```
 
-```csharp
-GameProgress.Ensure().IsEventCleared("event_01");   // 3. 读进度
-GameProgress.Ensure().AddFragment("frag_07");
-```
-
-## 场景结构
-
-`Shelter_L0` 的 `World` 下按层分组，方便手动微调：
+场景在 `World` 下按层分组，便于手动调整：
 
 | 组 | 内容 | 碰撞 |
 | --- | --- | --- |
-| `01_建筑` | 地板、墙、楼梯 | 只有这层是实心 |
-| `02_家具` | 桌面、工作台、管道 | 无 |
-| `03_可交互` | 碎片、对话物、两扇门 | Trigger（9 层） |
-| `04_角色` | 玩家、相机 | |
-| `05_灯光` | 顶灯、吊灯、事件后的光晕 | |
-| `06_系统` | 事件登记表、自测 | |
-| `07_细节` | 墙裙、墙筋、横梁、挂钟、光池、门框、B1 杂物 | 无 |
-| `08_前景` | 顶梁、右框、悬线（sortingOrder 30） | 无 |
+| `01_建筑` | 地板、墙、楼梯 | 实心 |
+| `02_家具` | 展柜台座、桌子、工作台、管道 | 无 |
+| `03_可交互` | 碎片、对话物、两扇门 | Trigger |
+| `04_角色` | 玩家、相机 | — |
+| `05_灯光` | 顶灯、吊灯、事件后的光晕 | — |
+| `06_系统` | 事件登记表 | — |
+| `07_细节` | 墙裙、墙筋、横梁、挂钟、门框 | 无 |
+| `08_前景` | 顶梁、侧框、悬线 | 无 |
 
-层：`Ground = 8`（可站立）、`Interactable = 9`（可交互）。
+物理层：`Ground = 8`、`Interactable = 9`。
 
-## 自测
+## 构建与自测
 
-打包版支持一个 `-selftest` 参数，自动把整条流程走一遍并截图：
+菜单 `工具 / 25小时`：
+
+- `重建第0层（白盒）`：重新生成贴图、字体、三个场景与 Build Settings
+- `白盒工具箱`：网格对齐、快速加平台、打开场景
+- `一键：重建 + 截图 + 打包`：以上全部，输出到 `D:/Unity2D/Build/25Hours`
+
+命令行（无编辑器界面）：
 
 ```powershell
-25Hours.exe -selftest -screen-width 1280 -screen-height 720 -screen-fullscreen 0
+& "Unity.exe" -batchmode -quit -projectPath "D:\Unity2D\Projects\25Hours" `
+  -executeMethod Level0Builder.BuildEverything -logFile build.log
 ```
 
-15 张截图在 [`docs/selftest`](docs/selftest)；加 `-fps` 会在日志里每秒打一行帧率和最差一帧耗时，日志在 `%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\Player.log`。
+流程自测（不需要人工操作）：
 
-## 一起改
+```powershell
+.\25Hours.exe -selftest -screen-width 1280 -screen-height 720 -screen-fullscreen 0
+```
 
-想被加成协作者、一起改工程？流程、约定和坑都写在 **[CONTRIBUTING.md](CONTRIBUTING.md)**（Unity 版本、哪些文件别手改、场景冲突怎么办、Smart Merge 配置、自测命令）。
+自测会走完「出生 → 下楼 → 取碎片 → 试锁门 → 事件一 → 返回 → 事件二 → 返回」全流程，逐段截图到 `D:/Unity2D/Build/25Hours/selftest`，并把坐标写入 Player.log：
 
-## 下载
+```
+%USERPROFILE%\AppData\LocalLow\Zhao\第25小时\Player.log
+```
 
-| 包 | 内容 |
+帧率记录：加 `-fps` 参数，日志每秒输出一次当前帧率与最差帧耗时。
+
+## 文字 / 剧情
+
+当前版本只包含场景与交互，剧情台词为空，交互只提供功能性反馈：
+
+| 交互 | 反馈 |
 | --- | --- |
-| [`dist/25Hours_2_可运行包_Win64.zip`](dist/) | Windows 64 位可运行版 |
-| [`dist/25Hours_3_截图.zip`](dist/) | 4 张预览 + 15 张自测 |
-| [`dist/25Hours_4_白盒生成脚本.zip`](dist/) | 只有 Editor / Scripts 的脚本 |
+| 碎片 | 右上角计数 + 提示「碎片 n / 6」 |
+| 人偶 / 展柜 / 回声匣 | 提示「（这段文字之后再加）」 |
+| 门锁着 | 提示「门锁着 · 要先完成前置事件」 |
+| 门可进入 | 直接切换到事件场景 |
+| 门后未接入事件 | 提示「（这扇门后面还没接事件）」 |
 
-## 已知限制
+补充台词有两种方式：
 
-- 美术全是 Editor 脚本画的占位图（`Assets/Art` 是生成物，删了能重建）
-- 中文字体用 Windows 自带的 SimHei，**没有进仓库**；生成器会从 `C:\Windows\Fonts\simhei.ttf` 自动复制。发布前请换成可商用字体
-- 事件场景是纯空房间（无文字/无 UI），棋盘还没接；这里只保证「进门 → Complete() → 回原位」这条链路是通的
-- 手感：物理步长固定 1/60 秒、渲染跟随垂直同步（这台机器 165Hz）、HUD 提示只在文字变化时重建，不会再每帧刷 UGUI
-- 菜单「重建第0层」会整个覆盖 `Shelter_L0` / `Event_01` / `Event_02`，想在场景里手改的请先另存
+1. 在场景中选中物体，填写 `DialogueProp.lines` / `linesAfterEvent`、`FragmentPickup.lines`、`EventDoor.lockedLines / enterLines / clearedLines`；字段有内容时会自动弹出对话框。
+2. 修改 `Assets/Editor/Level0Builder.cs` 的 `BuildInteractables()`。注意重建会用生成器的内容覆盖场景中手填的台词。
+
+## 事件 / 棋盘接入
+
+`Event_01` / `Event_02` 为空模板，只有相机与 `EventRoomTemplate`。接入方式、API 与约定见 [docs/event-integration.md](docs/event-integration.md)。
+
+```csharp
+public class Event01Board : EventRoomBase
+{
+    protected override void Start() { base.Start(); }
+
+    void OnBoardSolved() => Complete();   // 记录完成并返回第 0 层
+    void OnQuit()       => Leave();       // 中途退出，不记录完成
+}
+```
+
+## 现状与已知限制
+
+- 美术全部是脚本生成的占位图，尺寸与配色按白盒需要，不具最终品质
+- 中文使用系统字体 SimHei，字体本身不随仓库分发
+- 事件场景为空房间，玩法未实现
+- 白盒重建会覆盖 `Shelter_L0`、`Event_01`、`Event_02` 三个场景，手改前请先另存
+
+## 贡献
+
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 参考
 
-白盒阶段的做法参考了 [The Level Design Book · Blockout](https://book.leveldesignbook.com/process/blockout) 与 [How to make a level](https://book.leveldesignbook.com/process/overview)：先定体量与尺度、用光照和地标做寻路，把美术留到最后。
+- [The Level Design Book · Blockout](https://book.leveldesignbook.com/process/blockout)
+- [The Level Design Book · How to make a level](https://book.leveldesignbook.com/process/overview)
+
+## 许可
+
+尚未添加开源许可，对外分发前请先确认。
