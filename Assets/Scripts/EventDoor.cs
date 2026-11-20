@@ -9,7 +9,13 @@ using UnityEngine;
 /// </summary>
 public class EventDoor : InteractableBase
 {
-    [Tooltip("要进入的事件 id（要和 EventCatalog 里登记的一致）")]
+    [Tooltip("交互后进入哪一层：填场景名（必须已经加进 Build Settings），例如 Level_01")]
+    public string nextLevelScene;
+
+    [Tooltip("可选：要先把哪一层打完才打开。留空 = 一开始就能进")]
+    public string requiresLevel;
+
+    [Tooltip("旧的事件 id，只作为 nextLevelScene 没填时的兜底（查事件登记表）")]
     public string eventId = "event_01";
 
     [Tooltip("要先完成的前置事件 id；留空表示一开始就能开")]
@@ -46,7 +52,6 @@ public class EventDoor : InteractableBase
     public Color lockedGlow = new Color(1f, 0.32f, 0.3f, 0.18f);
     public Color unlockedGlow = new Color(1f, 0.86f, 0.56f, 0.24f);
 
-    string pendingScene;
     bool wasLocked = true;
 
     /// <summary>前置事件没完成 = 锁着。</summary>
@@ -54,14 +59,15 @@ public class EventDoor : InteractableBase
     {
         get
         {
-            if (string.IsNullOrEmpty(requiresEventId)) return false;
-            return !GameProgress.Ensure().IsEventCleared(requiresEventId);
+            string need = !string.IsNullOrEmpty(requiresLevel) ? requiresLevel : requiresEventId;
+            if (string.IsNullOrEmpty(need)) return false;
+            return !GameProgress.Ensure().IsEventCleared(need);
         }
     }
 
     public override string PromptText
     {
-        get { return IsLocked ? "查看 " + displayName : "进入 " + displayName; }
+        get { return IsLocked ? "查看 " + displayName : "进入下一层"; }
     }
 
     void Start()
@@ -72,15 +78,7 @@ public class EventDoor : InteractableBase
 
     void Update()
     {
-        if (pendingScene != null && !ShelterDialogue.IsOpen)
-        {
-            string scene = pendingScene;
-            pendingScene = null;
-            ShelterFlow.BeginEvent(eventId, scene);
-            return;
-        }
-
-        // 门在同一场景里被解锁（做完前置事件回来）时，把外观换掉
+        // 前置关卡打完后，把门的样子换成「已打开」
         if (IsLocked != wasLocked) RefreshLook();
     }
 
@@ -104,42 +102,35 @@ public class EventDoor : InteractableBase
         if (IsLocked)
         {
             PlayText(lockedStoryId, lockedLines);
-            if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("门锁着 · 要先完成前置事件");
-            return;
-        }
-
-        if (GameProgress.Ensure().IsEventCleared(eventId))
-        {
-            PlayText(clearedStoryId, clearedLines);
+            if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("这扇门还锁着");
             return;
         }
 
         string scene = ResolveScene();
         if (string.IsNullOrEmpty(scene))
         {
-            PlayText(null, missingLines);
-            if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("（这扇门后面还没接事件）");
+            if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("还没设置下一层（门的 Next Level Scene 填场景名）");
             return;
         }
 
-        ShelterFlow.RememberShelterPosition(player != null ? player.transform.position : transform.position);
-
-        bool hasEnterText = (!string.IsNullOrEmpty(enterStoryId) && Story.Has(enterStoryId))
-                            || (enterLines != null && enterLines.Length > 0);
-
-        if (hasEnterText)
+        if (!Application.CanStreamedLevelBeLoaded(scene))
         {
-            PlayText(enterStoryId, enterLines);
-            pendingScene = scene;
+            if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("场景 " + scene + " 不在 Build Settings 里");
+            return;
         }
-        else
-        {
-            ShelterFlow.BeginEvent(eventId, scene);
-        }
+
+        if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("进入 " + scene);
+
+        // 进下一层前，把本层标记成已完成（供下一扇门的 requiresLevel 判断）
+        GameProgress.Ensure().MarkEventCleared(eventId);
+
+        UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
     }
 
     string ResolveScene()
     {
+        if (!string.IsNullOrEmpty(nextLevelScene)) return nextLevelScene;
+
         var catalog = EventCatalog.Instance;
         EventInfo info;
         if (catalog != null && catalog.TryGet(eventId, out info) && info != null && !string.IsNullOrEmpty(info.sceneName))
