@@ -9,9 +9,14 @@ public class EventRoomTemplate : EventRoomBase
 {
     public Text statusText;
 
+    // 刚切场景那一帧，玩家按门的 E 还「按着」，会被这里接住 -> 立刻 Complete。
+    // 所以进场景后先闭麦一会儿。
+    float inputReadyTime;
+
     protected override void Start()
     {
         base.Start();
+        inputReadyTime = Time.time + 0.35f;
         Refresh();
     }
 
@@ -22,6 +27,8 @@ public class EventRoomTemplate : EventRoomBase
 
     void Update()
     {
+        if (Time.time < inputReadyTime) return;
+
         if (Input.GetKeyDown(KeyCode.E))
         {
             Complete();

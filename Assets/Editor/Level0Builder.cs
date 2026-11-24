@@ -58,6 +58,13 @@ public static class Level0Builder
         WhiteBoxUI.Load();
         SetupLayers();
 
+        // 记住当前场景，导出完再打开回来，免得把正在编辑的场景弄丢
+        string previousScene = EditorSceneManager.GetActiveScene().path;
+        if (EditorSceneManager.GetActiveScene().isDirty)
+        {
+            EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
+        }
+
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
         // 玩家要一个相机跟随目标，导出后相机本身丢掉
@@ -76,9 +83,18 @@ public static class Level0Builder
         PrefabUtility.SaveAsPrefabAsset(item.gameObject, PrefabDir + "/拾取物.prefab");
         Object.DestroyImmediate(item.gameObject);
 
+        var text = BuildText(null, "文字物件", 0f, 0f);
+        PrefabUtility.SaveAsPrefabAsset(text.gameObject, PrefabDir + "/文字物件.prefab");
+        Object.DestroyImmediate(text.gameObject);
+
         Object.DestroyImmediate(camGo);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
+        if (!string.IsNullOrEmpty(previousScene))
+        {
+            EditorSceneManager.OpenScene(previousScene);
+        }
+
         Debug.Log("[25Hours] 预制体已导出：" + PrefabDir);
     }
 
@@ -186,6 +202,28 @@ public static class Level0Builder
         door.clearedStoryId = clearedStoryId;
         door.doorRenderer = sr;
         return door;
+    }
+
+    /// <summary>「按 E 出字」的通用物件：白方块 + 触发圈 + SimpleTextTrigger。</summary>
+    static SimpleTextTrigger BuildText(Transform parent, string name, float cx, float cy)
+    {
+        var go = new GameObject(name, typeof(SimpleTextTrigger));
+        go.transform.SetParent(parent, false);
+        go.transform.position = new Vector3(cx, cy, 0f);
+        go.layer = InteractableLayer;
+
+        Visual(go.transform, new Color(0.72f, 0.72f, 0.76f, 1f), 0.9f, 0.9f, 4);
+
+        var body = go.AddComponent<CircleCollider2D>();
+        body.isTrigger = true;
+        body.radius = 0.75f;
+
+        var text = go.GetComponent<SimpleTextTrigger>();
+        text.displayName = "文字物件";
+        text.verb = "查看";
+        text.speaker = "旁白";
+        text.lines = new string[0];
+        return text;
     }
 
     static PickupItem BuildPickup(Transform parent, string name, float cx, float cy, string itemId, string storyId)
