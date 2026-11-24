@@ -27,6 +27,14 @@ public class ShelterPlayer : MonoBehaviour
     [Header("引用")]
     public SpriteRenderer spriteRenderer;
 
+    [Header("样子")]
+    [Tooltip("会翻面的图（一般填玩家的子物体 图）。留空会自动找名字叫 图 的子物体")]
+    public Transform spriteRoot;
+    [Tooltip("走路时上下晃一点，纯装饰")]
+    public bool bobWhileWalking = true;
+    public float bobAmount = 0.035f;
+    public float bobSpeed = 11f;
+
     /// <summary>对话打开时由 ShelterDialogue 关掉。</summary>
     public bool InputEnabled = true;
 
@@ -57,6 +65,10 @@ public class ShelterPlayer : MonoBehaviour
     float nextStepTime;
     float airLock;
 
+    float facing = 1f;
+    Vector3 spriteBasePos;
+    float walkTime;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -67,6 +79,36 @@ public class ShelterPlayer : MonoBehaviour
         rb.freezeRotation = true;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+        if (spriteRoot == null)
+        {
+            spriteRoot = FindSpriteChild();
+        }
+
+        if (spriteRoot != null)
+        {
+            spriteBasePos = spriteRoot.localPosition;
+
+            // 换了真图以后，根物体上那个占位方块就不用显示了
+            if (spriteRenderer != null && spriteRenderer.transform == transform)
+            {
+                spriteRenderer.enabled = false;
+            }
+        }
+    }
+
+    /// <summary>找子物体里的 SpriteRenderer（玩家结构是「碰撞在根、图在子物体」）。</summary>
+    Transform FindSpriteChild()
+    {
+        var found = GetComponentsInChildren<SpriteRenderer>(true);
+        for (int i = 0; i < found.Length; i++)
+        {
+            if (found[i].gameObject != gameObject)
+            {
+                return found[i].transform;
+            }
+        }
+        return null;
     }
 
     void Start()
@@ -101,7 +143,31 @@ public class ShelterPlayer : MonoBehaviour
         if (Mathf.Abs(AutoMove) > 0.01f) horizontal = AutoMove;
         if (Mathf.Abs(horizontal) < 0.01f) horizontal = 0f;
 
-        if (spriteRenderer != null)
+        if (spriteRoot != null)
+        {
+            // 朝向：往左走把图翻过来
+            if (horizontal > 0.01f) facing = 1f;
+            else if (horizontal < -0.01f) facing = -1f;
+
+            var scale = spriteRoot.localScale;
+            scale.x = Mathf.Abs(scale.x) * facing;
+            spriteRoot.localScale = scale;
+
+            // 走路时轻微上下晃（纯装饰，不影响碰撞）
+            if (bobWhileWalking && grounded && Mathf.Abs(horizontal) > 0.01f)
+            {
+                walkTime += Time.deltaTime * bobSpeed;
+                var pos = spriteBasePos;
+                pos.y += Mathf.Sin(walkTime) * bobAmount;
+                spriteRoot.localPosition = pos;
+            }
+            else
+            {
+                walkTime = 0f;
+                spriteRoot.localPosition = spriteBasePos;
+            }
+        }
+        else if (spriteRenderer != null)
         {
             if (horizontal > 0.01f) spriteRenderer.flipX = false;
             else if (horizontal < -0.01f) spriteRenderer.flipX = true;
