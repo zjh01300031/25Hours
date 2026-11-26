@@ -115,19 +115,6 @@ public static class MenuBuilder
         var aboutTitle = MakeText(about, "关于标题", "关于我们", 56, Accent, TextAnchor.MiddleCenter);
         PlaceRect(aboutTitle.rectTransform, new Vector2(0f, 280f), new Vector2(600f, 80f));
 
-        var aboutBody = MakeText(about, "关于内容",
-            "《第 25 小时》· 白盒版本\n\n" +
-            "一天只有 24 小时，第 25 小时是留给自己的那一小时。\n" +
-            "在这里，你要走进避难所，收集、点亮、呐喊，\n" +
-            "把散落的东西拼回原来的样子。\n\n" +
-            "制作：赵老爹 × 唯（AI 搭档）\n" +
-            "引擎：Unity 2022.3.62f3c1\n" +
-            "素材：暂无，全部是白盒占位\n\n" +
-            "————\n" +
-            "呐呐，能翻到这一页的人，我们都记住啦～",
-            26, TextColor, TextAnchor.UpperLeft);
-        PlaceRect(aboutBody.rectTransform, new Vector2(0f, -20f), new Vector2(780f, 420f));
-        aboutBody.lineSpacing = 1.35f;
 
         var btnBackAbout = MakeButton(about, "按钮_关于返回", "返回", font, ButtonColor, 320f, 74f, new Vector2(0f, -282f));
         ui.buttonBackFromAbout = btnBackAbout;
