@@ -29,7 +29,7 @@ public class EventRoomTemplate : EventRoomBase
     {
         if (Time.time < inputReadyTime) return;
 
-        if (Input.GetKeyDown(KeyCode.E))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
             Complete();
         }
@@ -45,7 +45,7 @@ public class EventRoomTemplate : EventRoomBase
 
         bool cleared = GameProgress.Ensure().IsEventCleared(EventId);
         statusText.text = cleared
-            ? "这个事件已经完成过了 · 按 E 再回一次避难所"
+            ? "这个事件已经完成过了 · 按空格再回一次避难所"
             : "事件进行中（这里是空模板，没有玩法）";
     }
 }
