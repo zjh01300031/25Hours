@@ -167,6 +167,6 @@ public class LevelFlow : MonoBehaviour
         // 记下「这一层打完了」，第0层的门就能用 Requires Level = levelId 来解锁
         GameProgress.Ensure().MarkEventCleared(levelId);
 
-        SceneManager.LoadScene(returnScene);
+        SceneFade.FadeTo(returnScene, 0.5f, 0.35f, 0.9f);
     }
 }

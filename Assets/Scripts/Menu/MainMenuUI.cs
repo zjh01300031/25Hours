@@ -67,7 +67,7 @@ public class MainMenuUI : MonoBehaviour
         Wire(buttonBackFromSettings, ShowMain);
         Wire(buttonBackFromAbout, ShowMain);
 
-        EnsureFadeImage();
+        // 转场黑幕由 SceneFade 统一管理，这里不再自己造
         RefreshVolumeLabels();
         ShowMain();
         RefreshContinueButton();
@@ -124,28 +124,14 @@ public class MainMenuUI : MonoBehaviour
         StartCoroutine(FadeThenLoad());
     }
 
-    /// <summary>压黑 → 停一下 → 切场景。</summary>
+    /// <summary>压黑 → 停一下 → 切场景（进游戏后再慢慢浮现）。</summary>
     IEnumerator FadeThenLoad()
     {
         leaving = true;
         SetButtonsInteractable(false);
 
-        if (fadeImage != null)
-        {
-            float t = 0f;
-            var start = new Color(0f, 0f, 0f, 0f);
-            var end = new Color(0f, 0f, 0f, 1f);
-            while (t < fadeDuration)
-            {
-                t += Time.unscaledDeltaTime;
-                fadeImage.color = Color.Lerp(start, end, Mathf.Clamp01(t / fadeDuration));
-                yield return null;
-            }
-            fadeImage.color = end;
-        }
-
-        yield return new WaitForSecondsRealtime(holdBlack);
-        SceneManager.LoadScene(SceneNames.ShelterL0);
+        SceneFade.FadeTo(SceneNames.ShelterL0, fadeDuration, holdBlack, 0.75f);
+        yield break;
     }
 
     void SetButtonsInteractable(bool value)

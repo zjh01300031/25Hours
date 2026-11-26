@@ -54,7 +54,7 @@ public static class ShelterFlow
         var handler = EventStarted;
         if (handler != null) handler(eventId);
 
-        SceneManager.LoadScene(sceneName);
+        SceneFade.FadeTo(sceneName, 0.5f, 0.35f, 0.9f);
         return true;
     }
 
@@ -67,7 +67,7 @@ public static class ShelterFlow
         var handler = EventFinished;
         if (handler != null) handler(id);
 
-        SceneManager.LoadScene(SceneNames.ShelterL0);
+        SceneFade.FadeTo(SceneNames.ShelterL0, 0.5f, 0.35f, 0.9f);
     }
 
     /// <summary>玩家读走回程坐标后调用，避免每次重生都回同一个点。</summary>

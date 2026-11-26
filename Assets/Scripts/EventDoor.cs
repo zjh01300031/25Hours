@@ -124,7 +124,7 @@ public class EventDoor : InteractableBase
         // 进下一层前，把本层标记成已完成（供下一扇门的 requiresLevel 判断）
         GameProgress.Ensure().MarkEventCleared(eventId);
 
-        UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
+        SceneFade.FadeTo(scene, 0.5f, 0.35f, 0.9f);
     }
 
     string ResolveScene()
