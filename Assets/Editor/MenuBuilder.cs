@@ -80,26 +80,26 @@ public static class MenuBuilder
         ui.continueHint = hint;
 
         // ---- 设置面板 ----
-        var settings = MakePanel(view, "设置面板", new Vector2(820f, 640f), new Vector2(0f, -20f));
+        var settings = MakePanel(view, "设置面板", new Vector2(900f, 660f), new Vector2(0f, -20f));
         ui.settingsPanel = settings.gameObject;
 
         var settingsTitle = MakeText(settings, "设置标题", "设置", 56, Accent, TextAnchor.MiddleCenter);
-        PlaceRect(settingsTitle.rectTransform, new Vector2(0f, 250f), new Vector2(600f, 80f));
+        PlaceRect(settingsTitle.rectTransform, new Vector2(0f, 262f), new Vector2(600f, 80f));
 
         var musicLabel = MakeText(settings, "背景音量标签", "背景音量", 28, TextColor, TextAnchor.MiddleLeft);
-        PlaceRect(musicLabel.rectTransform, new Vector2(-250f, 120f), new Vector2(200f, 40f));
-        var sliderMusic = MakeSlider(settings, "背景音量滑块", font, new Vector2(-10f, 120f));
+        PlaceRect(musicLabel.rectTransform, new Vector2(-330f, 120f), new Vector2(260f, 40f));
+        var sliderMusic = MakeSlider(settings, "背景音量滑块", font, new Vector2(40f, 120f), 440f);
         var musicValue = MakeText(settings, "背景音量数值", "80%", 26, TextColor, TextAnchor.MiddleRight);
-        PlaceRect(musicValue.rectTransform, new Vector2(322f, 120f), new Vector2(90f, 40f));
+        PlaceRect(musicValue.rectTransform, new Vector2(340f, 120f), new Vector2(100f, 40f));
 
         var sfxLabel = MakeText(settings, "互动音量标签", "互动音量", 28, TextColor, TextAnchor.MiddleLeft);
-        PlaceRect(sfxLabel.rectTransform, new Vector2(-250f, 30f), new Vector2(200f, 40f));
-        var sliderSfx = MakeSlider(settings, "互动音量滑块", font, new Vector2(-10f, 30f));
+        PlaceRect(sfxLabel.rectTransform, new Vector2(-330f, 30f), new Vector2(260f, 40f));
+        var sliderSfx = MakeSlider(settings, "互动音量滑块", font, new Vector2(40f, 30f), 440f);
         var sfxValue = MakeText(settings, "互动音量数值", "80%", 26, TextColor, TextAnchor.MiddleRight);
-        PlaceRect(sfxValue.rectTransform, new Vector2(322f, 30f), new Vector2(90f, 40f));
+        PlaceRect(sfxValue.rectTransform, new Vector2(340f, 30f), new Vector2(100f, 40f));
 
-        var btnAbout = MakeButton(settings, "按钮_关于我们", "关于我们", font, ButtonColorAlt, 320f, 74f, new Vector2(0f, -120f));
-        var btnBackSettings = MakeButton(settings, "按钮_设置返回", "返回", font, ButtonColor, 320f, 74f, new Vector2(0f, -218f));
+        var btnAbout = MakeButton(settings, "按钮_关于我们", "关于我们", font, ButtonColorAlt, 320f, 74f, new Vector2(0f, -130f));
+        var btnBackSettings = MakeButton(settings, "按钮_设置返回", "返回", font, ButtonColor, 320f, 74f, new Vector2(0f, -232f));
 
         ui.sliderMusic = sliderMusic;
         ui.sliderSfx = sliderSfx;
@@ -259,24 +259,28 @@ public static class MenuBuilder
         return button;
     }
 
-    static Slider MakeSlider(Transform parent, string name, Font font, Vector2 pos)
+    static Slider MakeSlider(Transform parent, string name, Font font, Vector2 pos, float width)
     {
-        var rt = MakeRect(parent, name, new Vector2(420f, 34f), pos);
+        var rt = MakeRect(parent, name, new Vector2(width, 30f), pos);
         var slider = rt.gameObject.AddComponent<Slider>();
 
-        var bg = MakeRect(rt, "背景", new Vector2(420f, 10f), Vector2.zero);
+        // 底槽
+        var bg = MakeRect(rt, "背景", new Vector2(width, 10f), Vector2.zero);
         var bgImg = bg.gameObject.AddComponent<Image>();
         bgImg.color = SliderBg;
 
-        var fillArea = MakeRect(rt, "填充区", new Vector2(410f, 10f), Vector2.zero);
-        var fill = MakeRect(fillArea, "填充", new Vector2(410f, 10f), Vector2.zero);
+        // 已填充部分：左右各留 10，和把手活动范围对齐
+        var fillArea = MakeRect(rt, "填充区", new Vector2(width - 20f, 10f), Vector2.zero);
+        var fill = MakeRect(fillArea, "填充", new Vector2(width - 20f, 10f), Vector2.zero);
+        FillAll(fill);
         var fillImg = fill.gameObject.AddComponent<Image>();
         fillImg.color = SliderFill;
 
-        var handleArea = MakeRect(rt, "把手区", new Vector2(420f, 34f), Vector2.zero);
-        var handle = MakeRect(handleArea, "把手", new Vector2(24f, 34f), Vector2.zero);
+        // 把手
+        var handleArea = MakeRect(rt, "把手区", new Vector2(width - 20f, 30f), Vector2.zero);
+        var handle = MakeRect(handleArea, "把手", new Vector2(22f, 30f), Vector2.zero);
         var handleImg = handle.gameObject.AddComponent<Image>();
-        handleImg.color = new Color(0.92f, 0.93f, 0.96f, 1f);
+        handleImg.color = new Color(0.94f, 0.94f, 0.97f, 1f);
 
         slider.fillRect = fill;
         slider.handleRect = handle;
