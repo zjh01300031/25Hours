@@ -1,3 +1,4 @@
+using System.Collections;
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -6,6 +7,7 @@ using UnityEngine.UI;
 /// <summary>
 /// 主菜单：开始 / 继续 / 设置 / 关于我们 / 退出。
 /// 全是白盒：深色底板 + 白字，没有任何美术资源。
+/// 点开始/继续时先压黑一小会儿再切场景，避免"啪"一下就跳走。
 /// </summary>
 public class MainMenuUI : MonoBehaviour
 {
@@ -32,6 +34,15 @@ public class MainMenuUI : MonoBehaviour
     [Header("关于面板")]
     public Button buttonBackFromAbout;
 
+    [Header("转场")]
+    [Tooltip("压黑用多久（秒）")]
+    public float fadeDuration = 0.45f;
+    [Tooltip("全黑之后停顿多久再切场景（秒）")]
+    public float holdBlack = 0.25f;
+
+    Image fadeImage;
+    bool leaving;
+
     void Start()
     {
         GameAudio.Load();
@@ -56,6 +67,7 @@ public class MainMenuUI : MonoBehaviour
         Wire(buttonBackFromSettings, ShowMain);
         Wire(buttonBackFromAbout, ShowMain);
 
+        EnsureFadeImage();
         RefreshVolumeLabels();
         ShowMain();
         RefreshContinueButton();
@@ -68,24 +80,80 @@ public class MainMenuUI : MonoBehaviour
         button.onClick.AddListener(action);
     }
 
+    /// <summary>在同一个 Canvas 最上层放一块全屏黑，平时透明。</summary>
+    void EnsureFadeImage()
+    {
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        var go = new GameObject("转场黑幕", typeof(RectTransform), typeof(Image));
+        go.transform.SetParent(canvas.transform, false);
+        var rt = (RectTransform)go.transform;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        rt.SetAsLastSibling();
+
+        fadeImage = go.GetComponent<Image>();
+        fadeImage.color = new Color(0f, 0f, 0f, 0f);
+        fadeImage.raycastTarget = false;
+    }
+
     // ---------- 按钮 ----------
 
     void StartGame()
     {
+        if (leaving) return;
         // 新游戏：先把存档删掉，免得继承上一次的进度
         if (File.Exists(GameProgress.SavePath)) File.Delete(GameProgress.SavePath);
-        SceneManager.LoadScene(SceneNames.ShelterL0);
+        StartCoroutine(FadeThenLoad());
     }
 
     void ContinueGame()
     {
+        if (leaving) return;
+
         if (!File.Exists(GameProgress.SavePath))
         {
             if (continueHint != null) continueHint.text = "还没有存档，先开始游戏吧";
             return;
         }
 
+        StartCoroutine(FadeThenLoad());
+    }
+
+    /// <summary>压黑 → 停一下 → 切场景。</summary>
+    IEnumerator FadeThenLoad()
+    {
+        leaving = true;
+        SetButtonsInteractable(false);
+
+        if (fadeImage != null)
+        {
+            float t = 0f;
+            var start = new Color(0f, 0f, 0f, 0f);
+            var end = new Color(0f, 0f, 0f, 1f);
+            while (t < fadeDuration)
+            {
+                t += Time.unscaledDeltaTime;
+                fadeImage.color = Color.Lerp(start, end, Mathf.Clamp01(t / fadeDuration));
+                yield return null;
+            }
+            fadeImage.color = end;
+        }
+
+        yield return new WaitForSecondsRealtime(holdBlack);
         SceneManager.LoadScene(SceneNames.ShelterL0);
+    }
+
+    void SetButtonsInteractable(bool value)
+    {
+        if (buttonStart != null) buttonStart.interactable = value;
+        if (buttonContinue != null) buttonContinue.interactable = value;
+        if (buttonSettings != null) buttonSettings.interactable = value;
+        if (buttonQuit != null) buttonQuit.interactable = value;
     }
 
     void OpenSettings()

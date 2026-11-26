@@ -60,8 +60,6 @@ public static class MenuBuilder
         var title = MakeText(view, "标题", "第 25 小时", 86, Accent, TextAnchor.MiddleCenter);
         PlaceRect(title.rectTransform, new Vector2(0f, 330f), new Vector2(1200f, 120f));
 
-        var subtitle = MakeText(view, "副标题", "白盒主菜单 · 只放了按钮和音量", 26, DimText, TextAnchor.MiddleCenter);
-        PlaceRect(subtitle.rectTransform, new Vector2(0f, 258f), new Vector2(1200f, 40f));
 
         // ---- 主菜单面板 ----
         var mainPanel = MakePanel(view, "主菜单", new Vector2(640f, 560f), new Vector2(0f, -30f));
