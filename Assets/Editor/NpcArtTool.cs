@@ -87,24 +87,94 @@ public static class NpcArtTool
         Debug.Log("[NPC] 预制体已生成：" + PrefabPath + "（拖进场景，按 E 就会说话）");
     }
 
-    // 工程被编辑器占着时没法用命令行，这里用一个 flag 文件触发：
-    // 放一个 Temp/apply-npc.flag，Unity 回到前台时自动执行一次。
+    // ===== 把场景里「只有一张图」的 npc 补成能交互的 NPC =====
+
+    [MenuItem("工具/25小时/修好场景里的 NPC（补碰撞体与对话）", false, 13)]
+    public static void RepairSceneNpc()
+    {
+        var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        if (string.IsNullOrEmpty(scene.path))
+        {
+            Debug.LogError("[NPC] 当前场景还没保存，先 Ctrl+S 再点这个菜单。");
+            return;
+        }
+
+        var arr = Object.FindObjectsOfType<Transform>(true);
+        int fixedCount = 0;
+        for (int i = 0; i < arr.Length; i++)
+        {
+            var t = arr[i];
+            // 用 npc.png 画的物体，但还没挂交互脚本
+            if (t.GetComponent<InteractableBase>() != null) continue;
+            var sr = t.GetComponent<SpriteRenderer>();
+            if (sr == null || sr.sprite == null) continue;
+            if (AssetDatabase.GetAssetPath(sr.sprite.texture) != ArtPath) continue;
+
+            MakeInteractive(t.gameObject);
+            fixedCount++;
+            Debug.Log("[NPC] 已补好：" + t.name + "（" + t.position + "）");
+        }
+
+        if (fixedCount == 0)
+        {
+            Debug.LogWarning("[NPC] 场景里没找到需要修的 npc 图片物体。直接把 对话NPC.prefab 拖进来就行。");
+            return;
+        }
+
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
+        UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+        Debug.Log("[NPC] 修好 " + fixedCount + " 个，场景已保存。");
+    }
+
+    static void MakeInteractive(GameObject go)
+    {
+        if (go.GetComponent<CircleCollider2D>() == null)
+        {
+            var col = go.AddComponent<CircleCollider2D>();
+            col.isTrigger = true;
+            col.radius = 0.6f;
+            col.offset = new Vector2(0f, 0.75f);
+        }
+
+        var talk = go.AddComponent<SimpleTextTrigger>();
+        talk.displayName = "白发少女";
+        talk.verb = "对话";
+        talk.speaker = "白发少女";
+        talk.lines = new[] { "……你来了。" };
+
+        int layer = LayerMask.NameToLayer("Interactable");
+        if (layer >= 0) go.layer = layer;
+
+        var sr = go.GetComponent<SpriteRenderer>();
+        if (sr != null) sr.sortingOrder = 5;
+    }
+
+    // 工程被编辑器占着时没法用命令行，这里用 flag 文件触发：
+    // Temp/apply-npc.flag → 重新生成预制体；Temp/add-npc.flag → 修当前场景里的 npc。
     [InitializeOnLoadMethod]
     static void AutoRunIfRequested()
     {
-        string flag = Path.Combine(Directory.GetCurrentDirectory(), "Temp", "apply-npc.flag");
-        if (!File.Exists(flag)) return;
+        string root = Directory.GetCurrentDirectory();
+        string flagAll = Path.Combine(root, "Temp", "apply-npc.flag");
+        string flagFix = Path.Combine(root, "Temp", "add-npc.flag");
+        bool doAll = File.Exists(flagAll);
+        bool doFix = File.Exists(flagFix);
+        if (!doAll && !doFix) return;
+
         if (EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
         {
             Debug.Log("[NPC] 正在 Play 模式，等停下来再执行");
             return;
         }
 
-        File.Delete(flag);
+        if (doAll) File.Delete(flagAll);
+        if (doFix) File.Delete(flagFix);
+
         EditorApplication.delayCall += () =>
         {
-            BuildAll();
-            string log = Path.Combine(Directory.GetCurrentDirectory(), "Temp", "apply-npc.log");
+            if (doAll) BuildAll();
+            if (doFix) RepairSceneNpc();
+            string log = Path.Combine(root, "Temp", "apply-npc.log");
             File.WriteAllText(log, System.DateTime.Now.ToString("HH:mm:ss") + " 完成\n");
         };
     }

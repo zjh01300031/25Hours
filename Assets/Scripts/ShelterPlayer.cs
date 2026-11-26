@@ -10,6 +10,9 @@ public class ShelterPlayer : MonoBehaviour
     [Header("手感")]
     public float moveSpeed = 5f;
     public float jumpForce = 12.5f;
+
+    [Tooltip("关掉就完全不能跳（空格留给交互）")]
+    public bool allowJump = false;
     [Range(1f, 8f)] public float gravityScale = 3.5f;
     [Tooltip("能自动迈上去的台阶高度上限")]
     public float stepHeight = 0.55f;
@@ -173,7 +176,7 @@ public class ShelterPlayer : MonoBehaviour
             else if (horizontal < -0.01f) spriteRenderer.flipX = true;
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
+        if (allowJump && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow)))
         {
             jumpBuffer = jumpBufferTime;
         }

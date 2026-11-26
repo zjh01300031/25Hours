@@ -7,7 +7,7 @@ EditorBuildSettings:
   m_Scenes:
   - enabled: 1
     path: Assets/Scenes/Shelter_L0.unity
-    guid: 1444b3c2c9333264a86eb4a9bd02cbbd
+    guid: cb20f5000f7cce34193f8f4c31e7c440
   - enabled: 1
     path: Assets/Scenes/Event_01.unity
     guid: b9c55493b11cd6244be66de9f7feb40d

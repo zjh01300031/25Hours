@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
 /// 玩家身边的「检测圈」：找到最近的可交互物，显示提示，按 E 互动。
@@ -7,7 +7,7 @@ public class ShelterInteractor : MonoBehaviour
 {
     public float radius = 1.9f;
     public LayerMask interactableMask;
-    public KeyCode interactKey = KeyCode.E;
+    public KeyCode interactKey = KeyCode.Space;
 
     readonly Collider2D[] hits = new Collider2D[16];
     InteractableBase current;
@@ -26,7 +26,7 @@ public class ShelterInteractor : MonoBehaviour
             if (current != null) current.SetHighlight(true);
         }
 
-        bool dialogueOpen = ShelterDialogue.IsOpen;
+        bool dialogueOpen = ShelterDialogue.IsOpen || ChoiceUI.IsOpen || InventoryUI.IsOpen;
         string prompt = (current == null || dialogueOpen) ? null : current.PromptText;
         if (prompt != lastPrompt)
         {

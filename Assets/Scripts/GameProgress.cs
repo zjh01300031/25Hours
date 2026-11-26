@@ -47,6 +47,7 @@ public class GameProgress : MonoBehaviour
     readonly HashSet<string> fragments = new HashSet<string>();
     readonly HashSet<string> clearedEvents = new HashSet<string>();
     readonly Dictionary<string, int> items = new Dictionary<string, int>();
+    readonly Dictionary<string, string> itemNames = new Dictionary<string, string>();
 
     [Tooltip("勾上才会把进度写进 progress.json、下次运行接着上次；不勾则每次运行都从头开始（物品会重新出现、门重新上锁）。")]
     public bool persistProgress = false;
@@ -117,10 +118,32 @@ public class GameProgress : MonoBehaviour
         return items.TryGetValue(id, out count) ? count : 0;
     }
 
+    /// <summary>背包里的全部物品（id → 数量），背包界面用。</summary>
+    public IEnumerable<KeyValuePair<string, int>> Items
+    {
+        get { return items; }
+    }
+
+    /// <summary>物品在背包里显示的名字。</summary>
+    public string ItemName(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return "";
+        string name;
+        return itemNames.TryGetValue(id, out name) ? name : id;
+    }
+
     /// <summary>加物品，返回加完以后的数量（0 表示 id 为空）。</summary>
     public int AddItem(string id, int amount = 1)
     {
+        return AddItem(id, amount, null);
+    }
+
+    /// <summary>加物品，顺便记住它的显示名（捡东西时传 displayName）。</summary>
+    public int AddItem(string id, int amount, string displayName)
+    {
         if (string.IsNullOrEmpty(id) || amount <= 0) return 0;
+
+        if (!string.IsNullOrEmpty(displayName)) itemNames[id] = displayName;
 
         int count = ItemCount(id) + amount;
         items[id] = count;
