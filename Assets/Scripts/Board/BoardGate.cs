@@ -46,6 +46,10 @@ public class BoardGate : MonoBehaviour
     public Color gateColor = new Color(0.55f, 0.78f, 0.95f, 1f);
     public Vector2 gateSize = new Vector2(1.1f, 1.6f);
 
+    [Header("进棋盘前的文案（一行一页；可写「标题|正文」）")]
+    [Tooltip("留空就用「入口标题 + 默认三页」的占位文案")]
+    public string[] introSlides = new string[0];
+
     public static bool IsOpen { get; private set; }
 
     bool open;
@@ -177,6 +181,26 @@ public class BoardGate : MonoBehaviour
         else Debug.Log("[棋盘入口] " + hint);
     }
 
+    /// <summary>先播一段进棋盘前的文案（像 PPT 一页一页出字），播完再切场景。</summary>
+    void PlayIntroThenGo()
+    {
+        string scene = boardScene;
+        var ui = BoardIntroUI.Ensure();
+        ui.Play(introSlides != null && introSlides.Length > 0 ? introSlides : DefaultSlides(),
+            () => SceneFade.FadeTo(scene, 0.45f, 0.25f, 0.8f));
+    }
+
+    /// <summary>没写文案时的占位三页（策划把 Intro Slides 填上就会盖掉这些）。</summary>
+    string[] DefaultSlides()
+    {
+        return new[]
+        {
+            gateTitle + "|" + introText,
+            "你把「" + requiredItemName + "」按进凹槽|凹槽边缘亮起一圈细光，台面上的纹路一格一格睁开了眼。",
+            "接下来|你只看得见这张棋盘。",
+        };
+    }
+
     void PutIn()
     {
         if (items.Count == 0)
@@ -203,7 +227,7 @@ public class BoardGate : MonoBehaviour
             BoardSession.SetReturn(ReturnMark());
             BoardSession.Set(requiredItemId, requiredItemName, debugArt);
             Close("（调试）放了一个空人偶进去");
-            SceneFade.FadeTo(boardScene, 0.45f, 0.25f, 0.8f);
+            PlayIntroThenGo();
             return;
         }
 
@@ -230,7 +254,7 @@ public class BoardGate : MonoBehaviour
 
         if (consumeItem) GameProgress.Ensure().RemoveItem(requiredItemId, 1);
         Close("「" + requiredItemName + "」嵌了进去");
-        SceneFade.FadeTo(boardScene, 0.45f, 0.25f, 0.8f);
+        PlayIntroThenGo();
     }
 
     void BuildUI()
