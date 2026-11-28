@@ -198,6 +198,12 @@ public static class ExploreBuilder
             var gate = gateGo.AddComponent<BoardGate>();
             gate.gateTitle = (titles != null && i < titles.Length) ? titles[i] : ("棋盘 " + (i + 1));
             gate.introText = "一座矮台，台面上有个凹槽，正好能嵌进一个人偶。";
+            gate.introSlides = new[]
+            {
+                gate.gateTitle + "|" + gate.introText,
+                "你把「人偶」按进凹槽|凹槽边缘亮起一圈细光，台面上的纹路一格一格睁开了眼。",
+                "接下来|你只看得见这张棋盘。",
+            };
             gate.requiredItemId = "item_doll";
             gate.requiredItemName = "人偶";
             gate.boardScene = boardScenes[i];
