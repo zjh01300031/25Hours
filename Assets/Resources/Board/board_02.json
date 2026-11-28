@@ -1,0 +1,44 @@
+{
+ "width": 7,
+ "height": 7,
+ "blockedCells": [
+  "0,0",
+  "0,1",
+  "0,2",
+  "0,3",
+  "0,6",
+  "1,0",
+  "1,1",
+  "1,2",
+  "2,1",
+  "4,1",
+  "5,0",
+  "5,1",
+  "5,2",
+  "6,0",
+  "6,1",
+  "6,2",
+  "6,3",
+  "6,6"
+ ],
+ "toggleCells": false,
+ "clearThreshold": 1.0,
+ "skills": [
+  {
+   "name": "竖二",
+   "shape": "col2",
+   "charges": 2
+  },
+  {
+   "name": "四方",
+   "shape": "square2",
+   "charges": 2
+  },
+  {
+   "name": "九宫",
+   "shape": "3x3",
+   "charges": 3
+  }
+ ],
+ "litCells": []
+}

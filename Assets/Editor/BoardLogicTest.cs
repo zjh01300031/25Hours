@@ -99,4 +99,39 @@ public static class BoardLogicTest
             Debug.LogError("[棋盘自测] ✗ " + name);
         }
     }
+
+    [MenuItem("工具/25小时/自测：五块棋盘数据", false, 7)]
+    public static void RunLayoutTests()
+    {
+        var expects = new[] { 26, 31, 28, 52, 65 };
+        passed = 0;
+        failed = 0;
+
+        for (int i = 0; i < 5; i++)
+        {
+            string path = "Assets/Resources/Board/board_" + (i + 1).ToString("00") + ".json";
+            var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(path);
+            if (asset == null) { Debug.LogError("[关卡数据] 找不到 " + path); failed++; continue; }
+
+            var layout = PuzzleLayoutLoader.Load(asset);
+            if (layout == null) { Debug.LogError("[关卡数据] 解析失败 " + path); failed++; continue; }
+
+            var board = new PuzzleBoard(layout.width, layout.height);
+            board.SetBlockedCells(layout.blockedCells);
+
+            bool okSize = layout.width > 0 && layout.height > 0;
+            bool okPlayable = board.PlayableCount == expects[i];
+            bool okSkills = layout.skills != null && layout.skills.Count > 0;
+            bool okCoverage = Mathf.Approximately(board.Coverage, 0f);
+
+            Check("棋盘" + (i + 1) + " 尺寸 " + layout.width + "×" + layout.height, okSize);
+            Check("棋盘" + (i + 1) + " 可用格 " + board.PlayableCount + "（应为 " + expects[i] + "）", okPlayable);
+            Check("棋盘" + (i + 1) + " 技能 " + (layout.skills == null ? 0 : layout.skills.Count) + " 个", okSkills);
+            Check("棋盘" + (i + 1) + " 初始覆盖 0", okCoverage);
+        }
+
+        Debug.Log("[关卡数据自测] 通过 " + passed + " 项，失败 " + failed + " 项");
+        if (failed > 0 && Application.isBatchMode) EditorApplication.Exit(1);
+    }
+
 }

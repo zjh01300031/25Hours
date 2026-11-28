@@ -9,6 +9,9 @@ public enum PuzzleShape
     Square3,  // 3×3
     Row3,     // 横向 3 格
     Col3,     // 纵向 3 格
+    Col2,     // 纵向 2 格
+    Square2,  // 2×2
+    L3,       // L 形 3 格（(0,0)(1,0)(0,1)）
 }
 
 /// <summary>
@@ -54,6 +57,16 @@ public class PuzzleSkill
                 return new[] { new Vector2Int(-1, 0), new Vector2Int(0, 0), new Vector2Int(1, 0) };
             case PuzzleShape.Col3:
                 return new[] { new Vector2Int(0, -1), new Vector2Int(0, 0), new Vector2Int(0, 1) };
+            case PuzzleShape.Col2:
+                return new[] { new Vector2Int(0, 0), new Vector2Int(0, 1) };
+            case PuzzleShape.Square2:
+                return new[]
+                {
+                    new Vector2Int(0, 0), new Vector2Int(1, 0),
+                    new Vector2Int(0, 1), new Vector2Int(1, 1),
+                };
+            case PuzzleShape.L3:
+                return new[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(0, 1) };
             default:
                 return new[] { new Vector2Int(0, 0) };
         }

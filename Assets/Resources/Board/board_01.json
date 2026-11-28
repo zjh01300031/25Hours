@@ -1,0 +1,30 @@
+{
+ "width": 5,
+ "height": 6,
+ "blockedCells": [
+  "0,0",
+  "0,5",
+  "4,0",
+  "4,5"
+ ],
+ "toggleCells": false,
+ "clearThreshold": 1.0,
+ "skills": [
+  {
+   "name": "竖二",
+   "shape": "col2",
+   "charges": 2
+  },
+  {
+   "name": "四方",
+   "shape": "square2",
+   "charges": 2
+  },
+  {
+   "name": "九宫",
+   "shape": "3x3",
+   "charges": 2
+  }
+ ],
+ "litCells": []
+}

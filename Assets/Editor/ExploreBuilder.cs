@@ -18,9 +18,14 @@ public static class ExploreBuilder
     [MenuItem("工具/25小时/生成事件一（探索区 + 三个棋盘）", false, 16)]
     public static void BuildAll()
     {
-        var boards = new[] { BuildBoard("Board_01", 5, 5, "board_01", "第一个棋盘"), 
-                             BuildBoard("Board_02", 6, 6, "board_02", "第二个棋盘"), 
-                             BuildBoard("Board_03", 7, 5, "board_03", "第三个棋盘") };
+        var boards = new[]
+        {
+            BuildBoard("Board_01", 5, 6, "board_01", "board_01"),
+            BuildBoard("Board_02", 7, 7, "board_02", "board_02"),
+            BuildBoard("Board_03", 9, 8, "board_03", "board_03"),
+            BuildBoard("Board_04", 8, 9, "board_04", "board_04"),
+            BuildBoard("Board_05", 11, 9, "board_05", "board_05"),
+        };
         BuildExplore(boards);
         SetupBuildSettings();
         Debug.Log("[探索区] Event_01 + Board_01/02/03 已生成");
@@ -28,7 +33,7 @@ public static class ExploreBuilder
 
     // ---------------- 棋盘 ----------------
 
-    static string BuildBoard(string sceneName, int w, int h, string eventId, string label)
+    static string BuildBoard(string sceneName, int w, int h, string eventId, string layoutName)
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -50,6 +55,7 @@ public static class ExploreBuilder
         board.returnScene = "Event_01";
         board.font = AssetDatabase.LoadAssetAtPath<Font>(FontPath);
         board.avatarSprite = AssetDatabase.LoadAssetAtPath<Sprite>(PlayerArt);
+        board.layoutJson = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Resources/Board/" + layoutName + ".json");
 
         var es = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem),
             typeof(UnityEngine.EventSystems.StandaloneInputModule));
@@ -149,8 +155,12 @@ public static class ExploreBuilder
         rig.useBounds = false;
 
         // 三个棋盘入口
-        var positions = new[] { new Vector3(-6f, -2.1f, 0f), new Vector3(0f, -2.1f, 0f), new Vector3(6f, -2.1f, 0f) };
-        var titles = new[] { "第一个棋盘", "第二个棋盘", "第三个棋盘" };
+        var positions = new[]
+        {
+            new Vector3(-8f, -2.1f, 0f), new Vector3(-4f, -2.1f, 0f), new Vector3(0f, -2.1f, 0f),
+            new Vector3(4f, -2.1f, 0f), new Vector3(8f, -2.1f, 0f),
+        };
+        var titles = new[] { "棋盘 1", "棋盘 2", "棋盘 3", "棋盘 4", "棋盘 5" };
 
         for (int i = 0; i < boardScenes.Length && i < positions.Length; i++)
         {
@@ -184,9 +194,11 @@ public static class ExploreBuilder
         bag.font = AssetDatabase.LoadAssetAtPath<Font>(FontPath);
         bag.boards = new[]
         {
-            new InventoryUI.BoardLink { itemId = "item_01", sceneName = "Board_01", label = "带着它走进第一块棋盘…" },
-            new InventoryUI.BoardLink { itemId = "item_02", sceneName = "Board_02", label = "带着它走进第二块棋盘…" },
-            new InventoryUI.BoardLink { itemId = "item_03", sceneName = "Board_03", label = "带着它走进第三块棋盘…" },
+            new InventoryUI.BoardLink { itemId = "item_01", sceneName = "Board_01", label = "带着它走进棋盘 1…" },
+            new InventoryUI.BoardLink { itemId = "item_02", sceneName = "Board_02", label = "带着它走进棋盘 2…" },
+            new InventoryUI.BoardLink { itemId = "item_03", sceneName = "Board_03", label = "带着它走进棋盘 3…" },
+            new InventoryUI.BoardLink { itemId = "item_04", sceneName = "Board_04", label = "带着它走进棋盘 4…" },
+            new InventoryUI.BoardLink { itemId = "item_05", sceneName = "Board_05", label = "带着它走进棋盘 5…" },
         };
 
         // 收尾：三块棋盘都打完就回第 0 层
@@ -194,7 +206,7 @@ public static class ExploreBuilder
         var flow = flowGo.GetComponent<LevelFlow>();
         flow.returnScene = "Shelter_L0";
         flow.levelId = "event_01";
-        flow.requiredEvents = new[] { "board_01", "board_02", "board_03" };
+        flow.requiredEvents = new[] { "board_01", "board_02", "board_03", "board_04", "board_05" };
         flow.returnWhenAllDoneOnStart = true;
 
         var es = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem),
@@ -234,7 +246,7 @@ public static class ExploreBuilder
 
     static void SetupBuildSettings()
     {
-        var order = new[] { "MainMenu", "Shelter_L0", "Event_01", "Board_01", "Board_02", "Board_03" };
+        var order = new[] { "MainMenu", "Shelter_L0", "Event_01", "Board_01", "Board_02", "Board_03", "Board_04", "Board_05" };
         var list = new List<EditorBuildSettingsScene>();
         foreach (var name in order)
         {

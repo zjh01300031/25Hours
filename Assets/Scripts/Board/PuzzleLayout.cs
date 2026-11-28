@@ -82,6 +82,17 @@ public static class PuzzleLayoutLoader
             case "row3":
             case "横3":
                 return PuzzleShape.Row3;
+            case "square2":
+            case "2x2":
+            case "四方":
+                return PuzzleShape.Square2;
+            case "col2":
+            case "竖2":
+                return PuzzleShape.Col2;
+            case "l3":
+            case "l":
+            case "l形":
+                return PuzzleShape.L3;
             case "col3":
             case "竖3":
                 return PuzzleShape.Col3;
