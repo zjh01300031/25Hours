@@ -42,6 +42,7 @@ public static class BoardBuilder
             new PuzzleSkill("共振", PuzzleShape.Square3, 2),
         };
         board.font = AssetDatabase.LoadAssetAtPath<Font>(FontPath);
+        board.avatarSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Characters/player.png");
 
         Directory.CreateDirectory("Assets/Scenes");
         EditorSceneManager.SaveScene(scene, ScenePath);

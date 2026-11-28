@@ -151,10 +151,10 @@ public class PuzzleController : EventRoomBase
         RuntimeUI.Panel(canvas.transform, "背景", new Vector2(4000f, 3000f), Vector2.zero, frameColor);
 
         RuntimeUI.Label(canvas.transform, "标题", "事件一 · 内层棋盘（白盒）", 42,
-            TextAnchor.MiddleCenter, textColor, font, new Vector2(1200f, 60f), new Vector2(0f, 440f));
+            TextAnchor.MiddleCenter, textColor, font, new Vector2(1200f, 60f), new Vector2(0f, 470f));
 
         coverageText = RuntimeUI.Label(canvas.transform, "覆盖率", "", 30,
-            TextAnchor.MiddleCenter, accentColor, font, new Vector2(1000f, 44f), new Vector2(0f, 384f));
+            TextAnchor.MiddleCenter, accentColor, font, new Vector2(1000f, 44f), new Vector2(0f, 412f));
 
         // 棋盘
         var boardRoot = new GameObject("棋盘", typeof(RectTransform));
@@ -162,7 +162,7 @@ public class PuzzleController : EventRoomBase
         var boardRect = boardRoot.GetComponent<RectTransform>();
         boardRect.anchorMin = boardRect.anchorMax = new Vector2(0.5f, 0.5f);
         boardRect.pivot = new Vector2(0.5f, 0.5f);
-        boardRect.anchoredPosition = new Vector2(0f, 60f);
+        boardRect.anchoredPosition = new Vector2(0f, 0f);
         boardRect.sizeDelta = new Vector2(width * (cellSize + gap), height * (cellSize + gap));
 
         for (int y = 0; y < height; y++)
@@ -206,7 +206,7 @@ public class PuzzleController : EventRoomBase
             float x = -totalWidth * 0.5f + 115f + i * 246f;
 
             var slot = RuntimeUI.Panel(canvas.transform, "技能_" + skills[i].name,
-                new Vector2(230f, 76f), new Vector2(x, -300f), new Color(0.18f, 0.20f, 0.25f, 1f));
+                new Vector2(230f, 76f), new Vector2(x, -350f), new Color(0.18f, 0.20f, 0.25f, 1f));
             var image = slot.GetComponent<Image>();
             image.raycastTarget = true;
 
@@ -224,7 +224,7 @@ public class PuzzleController : EventRoomBase
 
         // 重置
         var reset = RuntimeUI.Panel(canvas.transform, "重置", new Vector2(170f, 56f),
-            new Vector2(760f, -430f), new Color(0.18f, 0.20f, 0.25f, 1f));
+            new Vector2(820f, -350f), new Color(0.18f, 0.20f, 0.25f, 1f));
         var resetImage = reset.GetComponent<Image>();
         resetImage.raycastTarget = true;
         var resetButton = reset.gameObject.AddComponent<Button>();
@@ -238,7 +238,7 @@ public class PuzzleController : EventRoomBase
             new Vector2(1400f, 40f), new Vector2(0f, -430f));
 
         winText = RuntimeUI.Label(canvas.transform, "通关", "", 46, TextAnchor.MiddleCenter,
-            accentColor, font, new Vector2(1200f, 70f), new Vector2(0f, 210f));
+            accentColor, font, new Vector2(1200f, 70f), new Vector2(0f, 0f));
         winText.gameObject.SetActive(false);
     }
 
