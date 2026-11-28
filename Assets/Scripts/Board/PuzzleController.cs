@@ -327,6 +327,8 @@ public class PuzzleController : EventRoomBase
         }
 
         selectedSkill = index;
+        var slotImage = skillButtons[index].GetComponent<Image>();
+        if (slotImage != null && isActiveAndEnabled) StartCoroutine(PulseRoutine(slotImage, 0f));
         SetHint("已选第 " + (index + 1) + " 个技能（看按钮上的小图案），空格或点格子放");
         Refresh();
     }
@@ -377,7 +379,8 @@ public class PuzzleController : EventRoomBase
             int ay = y + affected[i].y;
             if (ax < 0 || ax >= width || ay < 0 || ay >= height) continue;
             if (board.IsBlocked(ax, ay)) continue;
-            PulseCell(ax, ay);
+            float delay = Mathf.Abs(affected[i].x) + Mathf.Abs(affected[i].y);
+            PulseCell(ax, ay, delay * 0.022f);
         }
         PulseAvatar();
 
@@ -501,16 +504,19 @@ public class PuzzleController : EventRoomBase
     }
 
     /// <summary>格子闪一下：亮起来的地方放大 + 提亮，再回落到正常色。</summary>
-    void PulseCell(int x, int y)
+    void PulseCell(int x, int y, float delay = 0f)
     {
         int index = y * width + x;
         if (index < 0 || index >= cellImages.Count) return;
         var image = cellImages[index];
-        if (image != null && isActiveAndEnabled) StartCoroutine(PulseRoutine(image));
+        if (image != null && isActiveAndEnabled) StartCoroutine(PulseRoutine(image, delay));
     }
 
-    IEnumerator PulseRoutine(Image image)
+    IEnumerator PulseRoutine(Image image, float delay)
     {
+        if (delay > 0f) yield return new WaitForSecondsRealtime(delay);
+        if (image == null) yield break;
+
         var rt = image.rectTransform;
         Color baseColor = image.color;
         Color flash = Color.Lerp(baseColor, Color.white, 0.65f);
