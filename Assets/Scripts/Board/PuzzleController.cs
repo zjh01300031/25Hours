@@ -92,6 +92,9 @@ public class PuzzleController : EventRoomBase
     int selectedSkill = -1;
     bool finished;
 
+    [Tooltip("白盒阶段：按 F1 直接把所有可用格点亮并通关，方便连着看下一块棋盘。上线前关掉")]
+    public bool allowDebugClear = true;
+
     Image avatarImage;
     Vector2Int cursor;
     float nextMove;
@@ -254,7 +257,7 @@ public class PuzzleController : EventRoomBase
         RuntimeUI.Label(reset, "字", "重置 (R)", 26, TextAnchor.MiddleCenter, textColor, font,
             new Vector2(170f, 56f), Vector2.zero);
 
-        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD / 方向键 走路 · 空格 放技能 · 1/2/3 换技能 · R 重置 · Esc 退出", 24,
+        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD / 方向键 走路 · 空格 放技能 · 1/2/3 换技能 · R 重置 · Esc 退出　　F1 直接完成（调试）", 24,
             TextAnchor.MiddleCenter, new Color(0.7f, 0.72f, 0.75f), font,
             new Vector2(1400f, 40f), new Vector2(0f, -430f));
 
@@ -392,6 +395,22 @@ public class PuzzleController : EventRoomBase
         PulseAvatar();
 
         if (!finished && board.Coverage >= clearThreshold - 0.0001f)
+        {
+            finished = true;
+            StartCoroutine(WinRoutine());
+        }
+    }
+
+    void DebugClear()
+    {
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                if (!board.IsBlocked(x, y)) board.SetLit(x, y, true);
+
+        Refresh();
+        SetHint("[调试] 一键完成：全部点亮");
+
+        if (!finished)
         {
             finished = true;
             StartCoroutine(WinRoutine());
@@ -602,6 +621,12 @@ public class PuzzleController : EventRoomBase
         if (finished) return;
 
         if (Input.GetKeyDown(KeyCode.R)) { ResetPuzzle(); return; }
+
+        if (allowDebugClear && Input.GetKeyDown(KeyCode.F1))
+        {
+            DebugClear();
+            return;
+        }
 
         for (int i = 0; i < skills.Length && i < 9; i++)
             if (Input.GetKeyDown(KeyCode.Alpha1 + i)) SelectSkill(i);
