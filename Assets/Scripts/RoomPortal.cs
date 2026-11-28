@@ -12,6 +12,12 @@ public class RoomPortal : MonoBehaviour
     [Header("到了之后站在哪个物体旁边（目标场景里的物体名）")]
     public string spawnObjectName = "入口_一层";
 
+    [Header("按交互键进去时显示的名字")]
+    public string doorLabel = "避难所二层";
+
+    [Tooltip("勾上 = 走进去就自动切场景；不勾 = 要按交互键（空格）才进")]
+    public bool enterOnTouch = false;
+
     [Header("触发")]
     public float triggerRadius = 2.2f;
     public bool needFacingRight = false;
@@ -51,7 +57,32 @@ public class RoomPortal : MonoBehaviour
 
         armedAt = Time.time + 0.6f;   // 刚进场别立刻又被弹回去
 
+        MakeInteractive();
+
         if (!string.IsNullOrEmpty(firstHint)) StartCoroutine(HintOnce());
+    }
+
+    // 让这扇门也能「按交互键进去」，和棋盘入口一个用法
+    void MakeInteractive()
+    {
+        gameObject.layer = LayerMask.NameToLayer("Interactable");
+
+        var col = GetComponent<CircleCollider2D>();
+        if (col == null) col = gameObject.AddComponent<CircleCollider2D>();
+        col.isTrigger = true;
+        col.radius = 1.2f;
+        col.offset = new Vector2(0f, 0.6f);
+
+        var door = GetComponent<RoomDoor>();
+        if (door == null) door = gameObject.AddComponent<RoomDoor>();
+
+        door.displayName = string.IsNullOrEmpty(doorLabel) ? "避难所二层" : doorLabel;
+        door.verb = "进入";
+        door.targetScene = targetScene;
+        door.spawnObjectName = spawnObjectName;
+        door.fadeOut = fadeOut;
+        door.blackHold = blackHold;
+        door.fadeIn = fadeIn;
     }
 
     System.Collections.IEnumerator HintOnce()
@@ -73,6 +104,7 @@ public class RoomPortal : MonoBehaviour
             look.color = c;
         }
 
+        if (!enterOnTouch) return;
         if (busy || InputGate.Blocked) return;
         if (Time.time < armedAt) return;
 

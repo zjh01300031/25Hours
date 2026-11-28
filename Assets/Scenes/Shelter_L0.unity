@@ -1769,6 +1769,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetScene: Shelter_2F
   spawnObjectName: "\u5230\u8FBE\u70B9_\u4E8C\u5C42"
+  enterOnTouch: 0
   triggerRadius: 2.2
   needFacingRight: 0
   fadeOut: 0.7
