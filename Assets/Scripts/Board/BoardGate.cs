@@ -186,15 +186,22 @@ public class BoardGate : MonoBehaviour
     {
         string scene = boardScene;
 
-        // 文案留空 = 不播演出，直接进棋盘（文字以后再填）
-        if (introSlides == null || introSlides.Length == 0)
-        {
-            SceneFade.FadeTo(scene, 0.45f, 0.25f, 0.8f);
-            return;
-        }
+        // 没填文案时用占位页（正文就是「空」这个字），演出照样播
+        var slides = (introSlides != null && introSlides.Length > 0) ? introSlides : PlaceholderSlides();
 
         var ui = BoardIntroUI.Ensure();
-        ui.Play(introSlides, () => SceneFade.FadeTo(scene, 0.45f, 0.25f, 0.8f));
+        ui.Play(slides, () => SceneFade.FadeTo(scene, 0.45f, 0.25f, 0.8f));
+    }
+
+    /// <summary>没填文案时的占位页：正文就写「空」，用来确认演出能播。</summary>
+    static string[] PlaceholderSlides()
+    {
+        return new[]
+        {
+            "空",
+            "空",
+            "空",
+        };
     }
 
     void PutIn()
