@@ -151,7 +151,14 @@ public class BoardGate : MonoBehaviour
         items.Clear();
         var progress = GameProgress.Ensure();
         foreach (var kv in progress.Items) items.Add(kv);
-        if (items.Count == 0 && allowDebugDoll) items.Add(new KeyValuePair<string, int>(DebugKey, 1));
+        if (allowDebugDoll)
+        {
+            bool hasDoll = false;
+            for (int i = 0; i < items.Count; i++)
+                if (items[i].Key == requiredItemId) { hasDoll = true; break; }
+
+            if (!hasDoll) items.Add(new KeyValuePair<string, int>(DebugKey, 1));
+        }
         cursor = 0;
 
         BuildUI();
@@ -167,13 +174,14 @@ public class BoardGate : MonoBehaviour
         if (player != null) player.InputEnabled = true;
         if (topdown != null) topdown.inputEnabled = true;
         if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast(hint);
+        else Debug.Log("[棋盘入口] " + hint);
     }
 
     void PutIn()
     {
         if (items.Count == 0)
         {
-            if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("背包里没有可以投的东西");
+            Say("背包里没有可以投的东西");
             return;
         }
 
@@ -194,8 +202,7 @@ public class BoardGate : MonoBehaviour
 
         if (picked.Key != requiredItemId)
         {
-            if (ShelterHUD.Instance != null)
-                ShelterHUD.Instance.Toast("放上去又弹了出来 —— 得是「" + requiredItemName + "」");
+            Say("放上去又弹了出来 —— 得是「" + requiredItemName + "」");
             return;
         }
 
@@ -237,6 +244,12 @@ public class BoardGate : MonoBehaviour
 
         hintText = RuntimeUI.Label(panel, "提示", "", 24, TextAnchor.MiddleCenter,
             new Color(0.7f, 0.72f, 0.76f), font, new Vector2(900f, 44f), new Vector2(0f, -210f));
+    }
+
+    void Say(string text)
+    {
+        if (hintText != null) hintText.text = text;
+        if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast(text);
     }
 
     void Refresh()

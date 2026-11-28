@@ -22,7 +22,11 @@ public static class SceneFade
             return;
         }
 
-        if (fader != null && fader.Busy) return;
+        if (fader != null && fader.Busy)
+        {
+            Debug.LogWarning("[Fade] 正在转场中，忽略这次：" + sceneName);
+            return;
+        }
 
         fader = Fader.Ensure();
         fader.Begin(sceneName, fadeOut, hold, fadeIn);
@@ -35,6 +39,7 @@ public class Fader : MonoBehaviour
 
     Image curtain;
     public bool Busy { get; private set; }
+    float busySince;
 
     public static Fader Ensure()
     {
@@ -74,9 +79,22 @@ public class Fader : MonoBehaviour
         if (instance == this) instance = null;
     }
 
+    void Update()
+    {
+        // 兜底：万一转场协程被打断，5 秒后自动解锁，不然之后所有切场景都会静默失败
+        if (Busy && Time.realtimeSinceStartup - busySince > 5f)
+        {
+            Debug.LogWarning("[Fade] 转场卡住了，强制复位");
+            Busy = false;
+            SetAlpha(0f);
+            curtain.raycastTarget = false;
+        }
+    }
+
     public void Begin(string sceneName, float fadeOut, float hold, float fadeIn)
     {
         if (Busy) return;
+        busySince = Time.realtimeSinceStartup;
         StartCoroutine(Run(sceneName, fadeOut, hold, fadeIn));
     }
 
