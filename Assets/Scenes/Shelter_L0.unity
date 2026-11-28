@@ -619,7 +619,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 154770186}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: da7fb36d1255b2d45affc1fd78485231, type: 3}
+  m_Script: {fileID: 11500000, guid: 676f91c3bf48e0f4d99d7c330d682899, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   eventId: event_02
@@ -650,7 +650,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 173886760}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd3fcf8a0376b0f478b6d14fdb1c0588, type: 3}
+  m_Script: {fileID: 11500000, guid: de1ec524f7fd0d04690f26b22adcaa0c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   eventId: event_02
@@ -1765,7 +1765,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 820532365}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d8bfdc5e6fe27024fbdd90c2d52cf303, type: 3}
+  m_Script: {fileID: 11500000, guid: b6d19b2940b01ef44a52ac700c3a67e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   targetScene: Shelter_2F
