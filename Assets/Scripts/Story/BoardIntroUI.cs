@@ -28,8 +28,11 @@ public class BoardIntroUI : MonoBehaviour
         return go.AddComponent<BoardIntroUI>();
     }
 
-    [Tooltip("每页最少停留多少秒（防止手快连按直接跳过整段）")]
-    public float minHold = 0.55f;
+    [Tooltip("每页自动停留多少秒，到点自动翻下一页")]
+    public float pageSeconds = 2.6f;
+
+    [Tooltip("长按这个键多少秒可以跳过整段演出")]
+    public float skipHoldSeconds = 0.6f;
 
     Canvas canvas;
     CanvasGroup group;
@@ -105,7 +108,7 @@ public class BoardIntroUI : MonoBehaviour
 
         // 全屏黑幕（盖住探索区，顺便挡住点击）
         var backdrop = RuntimeUI.Panel(canvas.transform, "黑幕", new Vector2(1920f, 1080f), Vector2.zero,
-            new Color(0.03f, 0.035f, 0.045f, 0.985f));
+            new Color(0f, 0f, 0f, 1f));
         backdrop.anchorMin = Vector2.zero;
         backdrop.anchorMax = Vector2.one;
         backdrop.offsetMin = Vector2.zero;
@@ -158,16 +161,31 @@ public class BoardIntroUI : MonoBehaviour
         yield return null;
         yield return null;
 
-        for (index = 0; index < pages.Count; index++)
+        float holdSkip = 0f;
+        bool skipped = false;
+
+        for (index = 0; index < pages.Count && !skipped; index++)
         {
             Show(index);
             pageShownAt = Time.unscaledTime;
 
-            // 先空转一小会儿，再接受翻页
-            while (Time.unscaledTime - pageShownAt < minHold) yield return null;
+            // 自动播放：到 pageSeconds 就翻页；期间长按 F 直接跳过整段
+            while (Time.unscaledTime - pageShownAt < pageSeconds)
+            {
+                if (Input.GetKey(KeyCode.F))
+                {
+                    holdSkip += Time.unscaledDeltaTime;
+                    if (holdSkip >= skipHoldSeconds)
+                    {
+                        Debug.Log("[开场文案] 长按 F 跳过");
+                        skipped = true;
+                        break;
+                    }
+                }
+                else holdSkip = 0f;
 
-            while (!WantsAdvance()) yield return null;
-            yield return null;
+                yield return null;
+            }
         }
 
         t = 0f;
@@ -194,18 +212,10 @@ public class BoardIntroUI : MonoBehaviour
         var page = pages[pageIndex];
         titleText.text = page[0];
         bodyText.text = string.IsNullOrEmpty(page[1]) ? "（这一页还没有文字）" : page[1];
-        footerText.text = "空格 / 回车 / 左键　翻页　·　" + (pageIndex + 1) + " / " + pages.Count;
+        footerText.text = "自动播放　·　长按 F 跳过　　" + (pageIndex + 1) + " / " + pages.Count;
 
         Debug.Log("[开场文案] 第 " + (pageIndex + 1) + " / " + pages.Count + " 页：" +
                   (titleText.text.Length > 0 ? titleText.text + " | " : "") + bodyText.text);
     }
 
-    static bool WantsAdvance()
-    {
-        return Input.GetKeyDown(KeyCode.Space)
-            || Input.GetKeyDown(KeyCode.E)
-            || Input.GetKeyDown(KeyCode.Return)
-            || Input.GetKeyDown(KeyCode.KeypadEnter)
-            || Input.GetMouseButtonDown(0);
-    }
 }
