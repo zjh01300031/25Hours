@@ -13,6 +13,9 @@ public class TopDownPlayer : MonoBehaviour
     public float bobAmount = 0.02f;
     public float bobSpeed = 10f;
 
+    [Tooltip("允许上下走（W/S）。关掉就只有 A/D 左右走")]
+    public bool allowVertical = false;
+
     public SpriteRenderer spriteRenderer;
 
     Rigidbody2D rb;
@@ -32,13 +35,16 @@ public class TopDownPlayer : MonoBehaviour
         if (spriteRenderer != null) basePos = spriteRenderer.transform.localPosition;
     }
 
-    static Vector2 ReadInput()
+    Vector2 ReadInput()
     {
         float x = 0f, y = 0f;
         if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) x -= 1f;
         if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) x += 1f;
-        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) y -= 1f;
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) y += 1f;
+        if (allowVertical)
+        {
+            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) y -= 1f;
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) y += 1f;
+        }
         return new Vector2(x, y);
     }
 
