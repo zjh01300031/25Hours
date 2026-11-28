@@ -1777,6 +1777,7 @@ MonoBehaviour:
   color: {r: 1, g: 0.92, b: 0.6, a: 0.85}
   size: {x: 1.2, y: 2.8}
   firstHint: "\u53BB\u63A2\u7D22\u53E6\u4E00\u4E2A\u7A7A\u95F4\u5427"
+  hintAfterEvent: event_02
 --- !u!4 &820532367
 Transform:
   m_ObjectHideFlags: 0

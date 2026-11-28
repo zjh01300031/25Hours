@@ -28,6 +28,9 @@ public class RoomPortal : MonoBehaviour
     [Tooltip("第一次进这个房间时，屏幕中间提示一句（留空不提示）")]
     public string firstHint = "";
 
+    [Tooltip("上面的提示要等这个事件通关后才出（留空 = 一直出）")]
+    public string hintAfterEvent = "event_02";
+
     bool busy;
     float armedAt;
     SpriteRenderer look;
@@ -54,6 +57,10 @@ public class RoomPortal : MonoBehaviour
     System.Collections.IEnumerator HintOnce()
     {
         yield return new WaitForSecondsRealtime(0.8f);
+
+        if (!string.IsNullOrEmpty(hintAfterEvent) && !GameProgress.Ensure().IsEventCleared(hintAfterEvent))
+            yield break;
+
         CenterHint.Show(firstHint);
     }
 
