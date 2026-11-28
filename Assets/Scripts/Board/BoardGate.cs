@@ -119,10 +119,16 @@ public class BoardGate : MonoBehaviour
         {
             bool near = dist <= triggerRadius;
             bool done = IsCleared();
-            SetPrompt(near ? (done ? "空格  再次进入「" + gateTitle + "」" : "空格  与「" + gateTitle + "」交互") : null);
+            SetPrompt(near ? (done ? "「" + gateTitle + "」已经通过了" : "空格  与「" + gateTitle + "」交互") : null);
 
             if (near && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.E)))
             {
+                if (done)
+                {
+                    if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("这块棋盘已经通过了");
+                    return;
+                }
+
                 SetPrompt(null);
                 Open();
             }
@@ -166,14 +172,8 @@ public class BoardGate : MonoBehaviour
     {
         if (InputGate.Blocked || BoardIntroUI.IsPlaying) return;
 
-        // 已经通关过的棋盘：不用再投人偶，直接再进一次
-        if (IsCleared() && !string.IsNullOrEmpty(boardScene))
-        {
-            BoardSession.SetReturn(ReturnMark());
-            BoardSession.Set(requiredItemId, requiredItemName, DollSprite());
-            PlayIntroThenGo();
-            return;
-        }
+        // 已经通过的棋盘不许再进
+        if (IsCleared()) return;
 
         open = true;
         armed = false;
