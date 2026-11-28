@@ -24,6 +24,9 @@ public class LevelFlow : MonoBehaviour
     [Tooltip("这一层的 id，给第0层门的 Requires Level 用。留空 = 自动用当前场景名（level01）")]
     public string levelId;
 
+    [Tooltip("进层时如果所有事件之前就已完成，直接回第0层（探索区重复进入时用）")]
+    public bool returnWhenAllDoneOnStart = false;
+
     [Header("测试时看得见的标记")]
     [Tooltip("收尾点的标记颜色。它其实是整场景生效的控制器，这里只是方便你在测试时确认它在。")]
     public Color markerColor = new Color(0.55f, 0.80f, 0.45f, 0.9f);
@@ -96,6 +99,19 @@ public class LevelFlow : MonoBehaviour
         // 启动这一下只统计、不返回：
         // 重进一个已经做完的层，不该一进门就被踢回第0层。
         Refresh(false);
+
+        if (returnWhenAllDoneOnStart && AllCleared())
+        {
+            StartCoroutine(ReturnRoutine());
+        }
+    }
+
+    bool AllCleared()
+    {
+        var progress = GameProgress.Ensure();
+        for (int i = 0; i < watching.Count; i++)
+            if (!progress.IsEventCleared(watching[i])) return false;
+        return true;
     }
 
     void OnEventCleared(string eventId)

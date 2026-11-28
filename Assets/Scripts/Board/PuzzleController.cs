@@ -37,6 +37,9 @@ public class PuzzleController : EventRoomBase
     [Header("技能（留空就用默认三件）")]
     public PuzzleSkill[] skills;
 
+    [Tooltip("通关后回哪个场景。填了（比如 Event_01）就只回这一层，不回第0层")]
+    public string returnScene;
+
     [Header("小人（WASD 走动，空格放技能）")]
     [Tooltip("留空就用内置白方块。想换成立绘就拖 Assets/Art/Characters/player.png 进来")]
     public Sprite avatarSprite;
@@ -404,6 +407,14 @@ public class PuzzleController : EventRoomBase
         ShelterHUD.Instance?.Toast("覆盖 " + Mathf.RoundToInt(board.Coverage * 100f) + "% · 事件一完成");
 
         yield return new WaitForSecondsRealtime(1.4f);
+
+        if (!string.IsNullOrEmpty(returnScene) && Application.CanStreamedLevelBeLoaded(returnScene))
+        {
+            GameProgress.Ensure().MarkEventCleared(EventId);
+            SceneFade.FadeTo(returnScene, 0.45f, 0.3f, 0.85f);
+            yield break;
+        }
+
         Complete();
     }
 
