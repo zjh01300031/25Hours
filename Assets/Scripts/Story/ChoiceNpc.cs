@@ -40,8 +40,22 @@ public class ChoiceNpc : InteractableBase
     [Tooltip("说完话之后，屏幕中间出的那行大字（留空不出）")]
     public string afterTalkHint = "";
 
+    [Tooltip("非空时：这个事件通关之前，她不理你（填 event_02）。留空 = 一开始就能说话")]
+    public string requireEventId = "";
+
+    [Tooltip("事件没通关时按交互键的提示")]
+    public string lockedToast = "她还没打算和你说话。";
+
     public override void Interact(ShelterPlayer player)
     {
+        if (!string.IsNullOrEmpty(requireEventId)
+            && !GameProgress.Ensure().IsEventCleared(requireEventId))
+        {
+            if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast(lockedToast);
+            else Debug.Log("[NPC] " + lockedToast);
+            return;
+        }
+
         ChoiceUI.Open(this, font);
     }
 
