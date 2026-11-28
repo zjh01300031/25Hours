@@ -93,6 +93,12 @@ public class PuzzleController : EventRoomBase
     Vector2Int cursor;
     float nextMove;
 
+    Vector2 avatarFrom, avatarTo;
+    float avatarT = 1f;
+    float avatarStep = 0.085f;   // 一格走多久（越小越快）
+    float castCooldown;          // 施法冷却，防止连按空格抖
+    const float CastInterval = 0.12f;
+
     /// <summary>不画那个橙色占位方块（棋盘自己就是可见的）。</summary>
     protected override void Awake() { }
 
@@ -104,7 +110,7 @@ public class PuzzleController : EventRoomBase
         BuildUI();
         if (selectedSkill < 0 && skills.Length > 0) selectedSkill = 0;
         Refresh();
-        UpdateCursor();
+        SnapCursor();
     }
 
     /// <summary>进入 Play 时先删掉编辑模式留下的静态预览，再画能点的那套。</summary>
@@ -350,6 +356,7 @@ public class PuzzleController : EventRoomBase
         }
 
         int skillIndex = selectedSkill;
+        var affected = new List<Vector2Int>(PuzzleSkill.Offsets(skill.shape));
         int changed = board.Apply(skill.shape, new Vector2Int(x, y), toggleCells);
         if (changed <= 0)
         {
@@ -362,6 +369,17 @@ public class PuzzleController : EventRoomBase
 
         Refresh();
         SkillUsed?.Invoke(skillIndex, skill.name, skill.charges);
+
+        // 施法反馈：被点到的格子一个个闪，小人弹一下
+        for (int i = 0; i < affected.Count; i++)
+        {
+            int ax = x + affected[i].x;
+            int ay = y + affected[i].y;
+            if (ax < 0 || ax >= width || ay < 0 || ay >= height) continue;
+            if (board.IsBlocked(ax, ay)) continue;
+            PulseCell(ax, ay);
+        }
+        PulseAvatar();
 
         if (!finished && board.Coverage >= clearThreshold - 0.0001f)
         {
@@ -451,10 +469,86 @@ public class PuzzleController : EventRoomBase
         CoverageChanged?.Invoke(board.Coverage, lit, playable);
     }
 
+    Vector2 CursorPosition()
+    {
+        return CellPosition(cursor.x, cursor.y) + new Vector2(0f, cellSize * 0.3f);
+    }
+
+    void SnapCursor()
+    {
+        if (avatarImage == null) return;
+        avatarTo = CursorPosition();
+        avatarFrom = avatarTo;
+        avatarT = 1f;
+        avatarImage.rectTransform.anchoredPosition = avatarTo;
+    }
+
     void UpdateCursor()
     {
-        if (avatarImage != null)
-            avatarImage.rectTransform.anchoredPosition = CellPosition(cursor.x, cursor.y) + new Vector2(0f, cellSize * 0.3f);
+        if (avatarImage == null) return;
+        avatarFrom = avatarImage.rectTransform.anchoredPosition;
+        avatarTo = CursorPosition();
+        avatarT = 0f;
+    }
+
+    /// <summary>每帧把小人往目标格平滑推进（不是瞬移）。</summary>
+    void AnimateAvatar()
+    {
+        if (avatarImage == null || avatarT >= 1f) return;
+        avatarT = Mathf.Min(1f, avatarT + Time.deltaTime / Mathf.Max(0.02f, avatarStep));
+        float k = Mathf.SmoothStep(0f, 1f, avatarT);
+        avatarImage.rectTransform.anchoredPosition = Vector2.LerpUnclamped(avatarFrom, avatarTo, k);
+    }
+
+    /// <summary>格子闪一下：亮起来的地方放大 + 提亮，再回落到正常色。</summary>
+    void PulseCell(int x, int y)
+    {
+        int index = y * width + x;
+        if (index < 0 || index >= cellImages.Count) return;
+        var image = cellImages[index];
+        if (image != null && isActiveAndEnabled) StartCoroutine(PulseRoutine(image));
+    }
+
+    IEnumerator PulseRoutine(Image image)
+    {
+        var rt = image.rectTransform;
+        Color baseColor = image.color;
+        Color flash = Color.Lerp(baseColor, Color.white, 0.65f);
+        float t = 0f, dur = 0.18f;
+
+        while (t < dur && image != null)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / dur);
+            image.color = Color.Lerp(flash, baseColor, k);
+            rt.localScale = Vector3.one * (1.12f - 0.12f * k);
+            yield return null;
+        }
+
+        if (image != null)
+        {
+            image.color = baseColor;
+            rt.localScale = Vector3.one;
+        }
+    }
+
+    void PulseAvatar()
+    {
+        if (avatarImage != null && isActiveAndEnabled) StartCoroutine(PulseAvatarRoutine());
+    }
+
+    IEnumerator PulseAvatarRoutine()
+    {
+        var rt = avatarImage.rectTransform;
+        float t = 0f, dur = 0.14f;
+        while (t < dur && avatarImage != null)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / dur);
+            rt.localScale = Vector3.one * (1f + 0.14f * Mathf.Sin(k * Mathf.PI));
+            yield return null;
+        }
+        if (avatarImage != null) rt.localScale = Vector3.one;
     }
 
     void MoveCursor(int dx, int dy)
@@ -491,22 +585,34 @@ public class PuzzleController : EventRoomBase
         for (int i = 0; i < skills.Length && i < 9; i++)
             if (Input.GetKeyDown(KeyCode.Alpha1 + i)) SelectSkill(i);
 
-        float dx = 0f, dy = 0f;
-        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) dx -= 1f;
-        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) dx += 1f;
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) dy += 1f;
-        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) dy -= 1f;
+        AnimateAvatar();
+        if (castCooldown > 0f) castCooldown -= Time.deltaTime;
 
-        if ((dx != 0f || dy != 0f) && Time.time >= nextMove)
+        bool left = Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow);
+        bool right = Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow);
+        bool up = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow);
+        bool down = Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow);
+
+        int dx = right ? 1 : (left ? -1 : 0);
+        int dy = up ? 1 : (down ? -1 : 0);
+        if (dx != 0 && dy != 0) dy = 0;   // 斜着按就先走横向
+
+        bool pressedNow =
+            Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D) ||
+            Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.S) ||
+            Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) ||
+            Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow);
+
+        if ((dx != 0 || dy != 0) && (pressedNow || Time.time >= nextMove))
         {
-            MoveCursor(Mathf.RoundToInt(dx), Mathf.RoundToInt(dy));
-            nextMove = Time.time + (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D) ||
-                                    Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.S) ||
-                                    Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) ||
-                                    Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow)
-                                    ? 0.42f : moveRepeat);
+            MoveCursor(dx, dy);
+            nextMove = Time.time + (pressedNow ? 0.26f : moveRepeat);
         }
 
-        if (Input.GetKeyDown(KeyCode.Space)) CastSelected();
+        if (Input.GetKeyDown(KeyCode.Space) && castCooldown <= 0f)
+        {
+            CastSelected();
+            castCooldown = CastInterval;
+        }
     }
 }
