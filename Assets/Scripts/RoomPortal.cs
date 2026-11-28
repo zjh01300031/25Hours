@@ -46,7 +46,8 @@ public class RoomPortal : MonoBehaviour
         if (GetComponent<SpriteRenderer>() == null)
         {
             var sr = gameObject.AddComponent<SpriteRenderer>();
-            sr.sprite = Marker.White;
+            // 用 Unity 自带的那块九宫格图，Sliced 才能按 size 拉成一根门
+            sr.sprite = Resources.GetBuiltinResource<Sprite>("UI/Skin/UISprite.psd");
             sr.drawMode = SpriteDrawMode.Sliced;
             sr.size = size;
             sr.color = color;
@@ -83,6 +84,12 @@ public class RoomPortal : MonoBehaviour
         door.fadeOut = fadeOut;
         door.blackHold = blackHold;
         door.fadeIn = fadeIn;
+    }
+
+    void OnDrawGizmos()
+    {
+        Gizmos.color = color;
+        Gizmos.DrawWireCube(transform.position + Vector3.up * (size.y * 0.5f), new Vector3(size.x, size.y, 0.1f));
     }
 
     System.Collections.IEnumerator HintOnce()
