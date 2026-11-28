@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -25,6 +26,10 @@ public class PuzzleController : EventRoomBase
     [Tooltip("勾上：技能会把格子翻转（亮↔暗），能拿来做唯一解的关卡；不勾：只点亮，白盒默认，保证打得通。")]
     public bool toggleCells = false;
 
+    [Tooltip("覆盖率到多少算通关。1 = 100%")]
+    [Range(0.1f, 1f)]
+    public float clearThreshold = 1f;
+
     [Header("技能（留空就用默认三件）")]
     public PuzzleSkill[] skills;
 
@@ -39,6 +44,27 @@ public class PuzzleController : EventRoomBase
     public Color textColor = new Color(0.92f, 0.92f, 0.90f);
     public Color accentColor = new Color(1f, 0.78f, 0.45f);
 
+    /// <summary>覆盖率变化时触发：(0~1 的覆盖率, 亮格数, 可用格数)</summary>
+    public event Action<float, int, int> CoverageChanged;
+
+    /// <summary>某一格状态变化时触发：(x, y, 现在是否亮)</summary>
+    public event Action<int, int, bool> CellChanged;
+
+    /// <summary>用了技能时触发：(技能序号, 技能名, 剩余次数)</summary>
+    public event Action<int, string, int> SkillUsed;
+
+    /// <summary>通关时触发一次</summary>
+    public event Action Cleared;
+
+    /// <summary>当前覆盖率（0~1），外部系统直接读这个。</summary>
+    public float Coverage { get { return board == null ? 0f : board.Coverage; } }
+
+    /// <summary>是否已经通关。</summary>
+    public bool IsCleared { get { return finished; } }
+
+    /// <summary>棋盘数据（只读用途：外部做小地图/存档时用）。</summary>
+    public PuzzleBoard Board { get { return board; } }
+
     PuzzleBoard board;
     readonly List<Image> cellImages = new List<Image>();
     readonly List<Button> skillButtons = new List<Button>();
@@ -48,6 +74,7 @@ public class PuzzleController : EventRoomBase
     Text coverageText;
     Text hintText;
     Text winText;
+    int[] initialCharges;
     int selectedSkill = -1;
     bool finished;
 
@@ -73,6 +100,9 @@ public class PuzzleController : EventRoomBase
                 new PuzzleSkill("共振", PuzzleShape.Square3, 2),
             };
         }
+
+        initialCharges = new int[skills.Length];
+        for (int i = 0; i < skills.Length; i++) initialCharges[i] = skills[i].charges;
 
         board = new PuzzleBoard(width, height);
         board.SetBlockedCells(blockedCells);
@@ -213,6 +243,7 @@ public class PuzzleController : EventRoomBase
             return;
         }
 
+        int skillIndex = selectedSkill;
         int changed = board.Apply(skill.shape, new Vector2Int(x, y), toggleCells);
         if (changed <= 0)
         {
@@ -224,8 +255,9 @@ public class PuzzleController : EventRoomBase
         if (skill.charges <= 0) selectedSkill = -1;
 
         Refresh();
+        SkillUsed?.Invoke(skillIndex, skill.name, skill.charges);
 
-        if (board.IsCleared && !finished)
+        if (!finished && board.Coverage >= clearThreshold - 0.0001f)
         {
             finished = true;
             StartCoroutine(WinRoutine());
@@ -234,24 +266,34 @@ public class PuzzleController : EventRoomBase
 
     IEnumerator WinRoutine()
     {
+        Cleared?.Invoke();
         winText.text = "全部点亮 · 通关";
         winText.gameObject.SetActive(true);
         SetHint("事件一完成，正在返回第 0 层…");
-        ShelterHUD.Instance?.Toast("覆盖 100% · 事件一完成");
+        ShelterHUD.Instance?.Toast("覆盖 " + Mathf.RoundToInt(board.Coverage * 100f) + "% · 事件一完成");
 
         yield return new WaitForSecondsRealtime(1.4f);
         Complete();
     }
 
-    void ResetPuzzle()
+    /// <summary>重置棋盘。restoreCharges = true 时技能次数也回到初始值（外部调也行）。</summary>
+    public void ResetBoard(bool restoreCharges = false)
     {
         if (finished) return;
         board.Reset();
-        foreach (var s in skills) { /* 次数不还原，重置只清棋盘 */ }
+
+        if (restoreCharges && initialCharges != null)
+        {
+            for (int i = 0; i < skills.Length && i < initialCharges.Length; i++)
+                skills[i].charges = initialCharges[i];
+        }
+
         selectedSkill = -1;
-        SetHint("棋盘已清空（技能次数不返还）");
+        SetHint(restoreCharges ? "棋盘与技能次数都已重置" : "棋盘已清空（技能次数不返还）");
         Refresh();
     }
+
+    void ResetPuzzle() { ResetBoard(false); }
 
     void SetHint(string text)
     {
@@ -267,8 +309,16 @@ public class PuzzleController : EventRoomBase
                 var image = cellImages[y * width + x];
                 if (image == null) continue;
 
-                if (board.IsBlocked(x, y)) image.color = blockedColor;
-                else image.color = board.IsLit(x, y) ? litColor : darkColor;
+                if (board.IsBlocked(x, y))
+                {
+                    image.color = blockedColor;
+                }
+                else
+                {
+                    bool on = board.IsLit(x, y);
+                    image.color = on ? litColor : darkColor;
+                    CellChanged?.Invoke(x, y, on);
+                }
             }
         }
 
@@ -291,6 +341,8 @@ public class PuzzleController : EventRoomBase
         int percent = Mathf.RoundToInt(board.Coverage * 100f);
         if (coverageText != null)
             coverageText.text = "覆盖 " + lit + " / " + playable + " · " + percent + "%";
+
+        CoverageChanged?.Invoke(board.Coverage, lit, playable);
     }
 
     void Update()
