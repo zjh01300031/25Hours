@@ -185,20 +185,16 @@ public class BoardGate : MonoBehaviour
     void PlayIntroThenGo()
     {
         string scene = boardScene;
-        var ui = BoardIntroUI.Ensure();
-        ui.Play(introSlides != null && introSlides.Length > 0 ? introSlides : DefaultSlides(),
-            () => SceneFade.FadeTo(scene, 0.45f, 0.25f, 0.8f));
-    }
 
-    /// <summary>没写文案时的占位三页（策划把 Intro Slides 填上就会盖掉这些）。</summary>
-    string[] DefaultSlides()
-    {
-        return new[]
+        // 文案留空 = 不播演出，直接进棋盘（文字以后再填）
+        if (introSlides == null || introSlides.Length == 0)
         {
-            gateTitle + "|" + introText,
-            "你把「" + requiredItemName + "」按进凹槽|凹槽边缘亮起一圈细光，台面上的纹路一格一格睁开了眼。",
-            "接下来|你只看得见这张棋盘。",
-        };
+            SceneFade.FadeTo(scene, 0.45f, 0.25f, 0.8f);
+            return;
+        }
+
+        var ui = BoardIntroUI.Ensure();
+        ui.Play(introSlides, () => SceneFade.FadeTo(scene, 0.45f, 0.25f, 0.8f));
     }
 
     void PutIn()

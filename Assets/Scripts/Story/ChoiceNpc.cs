@@ -145,6 +145,7 @@ public class ChoiceUI : MonoBehaviour
 
     void Update()
     {
+        if (BoardIntroUI.IsPlaying) return;
         if (!IsOpen) return;
         if (Time.frameCount == openedFrame) return;   // 打开这一帧按的空格别当成确定
 

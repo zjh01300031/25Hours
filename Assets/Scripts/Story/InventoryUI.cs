@@ -52,6 +52,7 @@ public class InventoryUI : MonoBehaviour
 
     void Update()
     {
+        if (BoardIntroUI.IsPlaying) return;
         // 有别的弹窗（棋盘入口 / 多选项）的时候，背包键不响应
         if (BoardGate.IsOpen || ChoiceUI.IsOpen) return;
 
