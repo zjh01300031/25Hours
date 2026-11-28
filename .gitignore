@@ -33,6 +33,5 @@ Thumbs.db
 
 # 字体：SimHei 为 Windows 自带字体，不随仓库分发；
 # 生成器 WhiteBoxArt.EnsureFont 会自动从 C:\Windows\Fonts\simhei.ttf 复制
-Assets/Fonts/
-# 两份被预览窗口占用的 PDF（已备份到 D:\Unity2D\Share\guides），可手动删除
-docs/
+25Hours/Assets/Fonts/
+25Hours/Assets/Resources/Fonts/
