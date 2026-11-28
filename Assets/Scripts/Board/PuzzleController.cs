@@ -48,6 +48,9 @@ public class PuzzleController : EventRoomBase
 
     [Header("外观")]
     public Font font;
+    [Tooltip("白盒阶段：勾上就不管行动次数，随便走（上线前关掉）")]
+    public bool ignoreMoveLimit = false;
+
     public float cellSize = 112f;
     public float gap = 10f;
     public Color litColor = new Color(0.98f, 0.85f, 0.52f);
@@ -764,9 +767,10 @@ public class PuzzleController : EventRoomBase
         if (board.IsBlocked(next.x, next.y)) { SetHint("这里是形状外 / 障碍格，走不过去"); return; }
 
         int cost = (lastDir == dir) ? 0 : 1;   // 往同一个方向连着走不算新行动
-        if (moveLimit > 0 && movesUsed + cost > moveLimit)
+        if (!ignoreMoveLimit && moveLimit > 0 && movesUsed + cost > moveLimit)
         {
-            SetHint("行动次数用尽（" + movesUsed + " / " + moveLimit + "）— 按 R 重置，或直接释放技能");
+            SetHint("行动用完了（已用 " + movesUsed + " / " + moveLimit + "）· 只能同向继续走 · R 重置");
+            if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast("行动次数用完了 · 按 R 重置棋盘");
             return;
         }
 
