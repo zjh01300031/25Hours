@@ -31,24 +31,55 @@ public class CollectionGate : InteractableBase
             return;
         }
 
-        int remain = quest.Remaining(group);
-        if (remain > 0)
+        var progress = GameProgress.Ensure();
+
+        // 先看第一组：还没打事件一，就看第一组
+        if (!progress.IsEventCleared(quest.EventOf("A")))
         {
-            Say(missingPrefix + remain + " 件：" + quest.MissingNames(group));
+            int totalA = quest.Total("A");
+            int remainA = quest.Remaining("A");
+
+            if (totalA <= 0)
+            {
+                Say("第一组的东西还没摆进场景");
+                return;
+            }
+
+            if (remainA > 0)
+            {
+                Say(missingPrefix + remainA + " 件：" + quest.MissingNames("A"));
+                return;
+            }
+
+            Say(readyText);
+            if (!quest.TryEnter("A")) Say("进不去（检查 Build Settings 里的 Event_01）");
             return;
         }
 
-        if (quest.Total(group) <= 0)
+        // 第一组已经打完了：看第二组
+        if (!progress.IsEventCleared(quest.EventOf("B")))
         {
-            Say("这一组还没摆东西");
+            int totalB = quest.Total("B");
+            int remainB = quest.Remaining("B");
+
+            if (totalB <= 0)
+            {
+                Say("第二组的东西还没摆进场景");
+                return;
+            }
+
+            if (remainB > 0)
+            {
+                Say(missingPrefix + remainB + " 件：" + quest.MissingNames("B"));
+                return;
+            }
+
+            Say(readyText);
+            if (!quest.TryEnter("B")) Say("进不去（检查 Build Settings 里的 Event_02）");
             return;
         }
 
-        Say(readyText);
-        if (!quest.TryEnter(group))
-        {
-            Say("入口打不开（检查 Build Settings 与事件 id）");
-        }
+        Say("这里已经没有要收的东西了。");
     }
 
     void Say(string text)
