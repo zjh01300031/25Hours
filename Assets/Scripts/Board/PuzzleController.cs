@@ -136,6 +136,7 @@ public class PuzzleController : EventRoomBase
     void BuildBoard()
     {
         ApplyLayoutIfAny();
+        FitCellsToScreen();
 
         if (skills == null || skills.Length == 0)
         {
@@ -169,6 +170,17 @@ public class PuzzleController : EventRoomBase
     }
 
     // ---------------- 界面 ----------------
+
+    void FitCellsToScreen()
+    {
+        // 让整块棋盘落在 1920×1080 的安全区里（上下给标题和技能条留位置）
+        float usableW = 1520f;
+        float usableH = 780f;
+        float byW = usableW / Mathf.Max(1, width);
+        float byH = usableH / Mathf.Max(1, height);
+        cellSize = Mathf.Clamp(Mathf.Min(byW, byH), 44f, 126f);
+        gap = Mathf.Round(cellSize * 0.09f);
+    }
 
     void BuildUI()
     {

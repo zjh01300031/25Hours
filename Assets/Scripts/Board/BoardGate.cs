@@ -57,6 +57,10 @@ public class BoardGate : MonoBehaviour
     Text listText;
     Text hintText;
     ShelterPlayer player;
+    Transform actor;
+    TopDownPlayer topdown;
+    readonly List<GameObject> spawned = new List<GameObject>();
+    Text promptText;
 
     void Start()
     {
@@ -80,15 +84,26 @@ public class BoardGate : MonoBehaviour
 
     void Update()
     {
-        if (player == null) player = FindObjectOfType<ShelterPlayer>();
-        if (player == null) return;
+        if (actor == null)
+        {
+            player = FindObjectOfType<ShelterPlayer>();
+            topdown = FindObjectOfType<TopDownPlayer>();
+            actor = player != null ? player.transform : (topdown != null ? topdown.transform : null);
+            if (actor == null) return;
+        }
 
-        float dist = Vector2.Distance(player.transform.position, transform.position);
+        float dist = Vector2.Distance(actor.position, transform.position);
 
         if (!open)
         {
-            if (dist > triggerRadius) { armed = true; return; }
-            if (armed && dist <= triggerRadius) Open();
+            bool near = dist <= triggerRadius;
+            SetPrompt(near ? "空格  与「" + gateTitle + "」交互" : null);
+
+            if (near && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.E)))
+            {
+                SetPrompt(null);
+                Open();
+            }
             return;
         }
 
@@ -104,12 +119,34 @@ public class BoardGate : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return)) PutIn();
     }
 
+    void SetPrompt(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            if (promptText != null) promptText.gameObject.SetActive(false);
+            return;
+        }
+
+        if (promptText == null)
+        {
+            var canvas = RuntimeUI.CreateCanvas("入口提示", 62);
+            spawned.Add(canvas.gameObject);
+            var font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 26);
+            promptText = RuntimeUI.Label(canvas.transform, "提示", "", 26, TextAnchor.MiddleCenter,
+                new Color(0.95f, 0.86f, 0.62f), font, new Vector2(1200f, 44f), new Vector2(0f, -300f));
+        }
+
+        promptText.text = text;
+        promptText.gameObject.SetActive(true);
+    }
+
     void Open()
     {
         open = true;
         armed = false;
         IsOpen = true;
         if (player != null) player.InputEnabled = false;
+        if (topdown != null) topdown.inputEnabled = false;
 
         items.Clear();
         var progress = GameProgress.Ensure();
@@ -128,6 +165,7 @@ public class BoardGate : MonoBehaviour
         if (canvas != null) Destroy(canvas.gameObject);
         canvas = null;
         if (player != null) player.InputEnabled = true;
+        if (topdown != null) topdown.inputEnabled = true;
         if (ShelterHUD.Instance != null) ShelterHUD.Instance.Toast(hint);
     }
 

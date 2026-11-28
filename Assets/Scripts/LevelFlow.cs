@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
 /// 一层（Level_01 / Level_02 …）的收尾逻辑：
@@ -35,6 +36,10 @@ public class LevelFlow : MonoBehaviour
 
     readonly List<string> watching = new List<string>();
     bool returning;
+
+    [Tooltip("进度文字用的字体。留空就用系统字体")]
+    public Font font;
+    Text statusText;
 
     void Awake()
     {
@@ -91,6 +96,8 @@ public class LevelFlow : MonoBehaviour
 
         GameProgress.EventCleared += OnEventCleared;
 
+        BuildStatusUI();
+
         if (string.IsNullOrEmpty(levelId))
         {
             levelId = SceneManager.GetActiveScene().name;
@@ -104,6 +111,19 @@ public class LevelFlow : MonoBehaviour
         {
             StartCoroutine(ReturnRoutine());
         }
+    }
+
+    void BuildStatusUI()
+    {
+        var canvas = RuntimeUI.CreateCanvas("收尾进度", 61);
+        var f = font != null ? font : Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 24);
+        statusText = RuntimeUI.Label(canvas.transform, "进度", "", 24, TextAnchor.MiddleLeft,
+            new Color(0.78f, 0.88f, 0.72f), f, new Vector2(760f, 36f), new Vector2(0f, 0f));
+        var rt = statusText.rectTransform;
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0f, 1f);
+        rt.anchoredPosition = new Vector2(24f, -24f);
     }
 
     bool AllCleared()
@@ -149,8 +169,20 @@ public class LevelFlow : MonoBehaviour
                 return;
             }
 
+            if (statusText != null) statusText.text = "棋盘全部完成 · 正在回第 0 层";
             StartCoroutine(ReturnRoutine());
             return;
+        }
+
+        if (statusText != null)
+        {
+            var missing = new System.Text.StringBuilder();
+            for (int i = 0; i < watching.Count; i++)
+                if (!progress.IsEventCleared(watching[i]))
+                    missing.Append(watching[i].Replace("board_", "#")).Append(' ');
+
+            statusText.text = "棋盘已完成 " + (watching.Count - left) + " / " + watching.Count
+                + "　　还差：" + missing.ToString().Trim();
         }
 
         if (ShelterHUD.Instance != null)

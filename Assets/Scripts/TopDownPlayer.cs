@@ -16,6 +16,9 @@ public class TopDownPlayer : MonoBehaviour
     [Tooltip("允许上下走（W/S）。关掉就只有 A/D 左右走")]
     public bool allowVertical = false;
 
+    [Tooltip("关掉就站住不动（弹面板、转场时用）")]
+    public bool inputEnabled = true;
+
     public SpriteRenderer spriteRenderer;
 
     Rigidbody2D rb;
