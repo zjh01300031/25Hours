@@ -34,6 +34,11 @@ public class PuzzleLayout
     public float clearThreshold = 1f;
     public List<PuzzleSkillData> skills = new List<PuzzleSkillData>();
     public string[] litCells;
+
+    // 设计稿里的起始位置（0 起算）与放技能次数上限；0 或负数 = 不限
+    public int startX = -1;
+    public int startY = -1;
+    public int moveLimit = 0;
 }
 
 [Serializable]

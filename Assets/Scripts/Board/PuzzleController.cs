@@ -92,7 +92,11 @@ public class PuzzleController : EventRoomBase
     int selectedSkill = -1;
     bool finished;
 
-    [Tooltip("白盒阶段：按 F1 直接把所有可用格点亮并通关，方便连着看下一块棋盘。上线前关掉")]
+    int startX = -1, startY = -1;   // 设计稿给的起始格；<0 表示用默认
+    int moveLimit;                  // 设计稿给的放技能次数上限；0 = 不限
+    int movesUsed;
+
+    [Tooltip("白盒阶段：按 Tab 直接把所有可用格点亮并通关，方便连着看下一块棋盘。上线前关掉")]
     public bool allowDebugClear = true;
 
     Image avatarImage;
@@ -115,6 +119,8 @@ public class PuzzleController : EventRoomBase
         BuildBoard();
         BuildUI();
         if (selectedSkill < 0 && skills.Length > 0) selectedSkill = 0;
+        if (startX >= 0 && startX < width && startY >= 0 && startY < height)
+            cursor = new Vector2Int(startX, startY);
         Refresh();
         SnapCursor();
     }
@@ -257,7 +263,7 @@ public class PuzzleController : EventRoomBase
         RuntimeUI.Label(reset, "字", "重置 (R)", 26, TextAnchor.MiddleCenter, textColor, font,
             new Vector2(170f, 56f), Vector2.zero);
 
-        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD / 方向键 走路 · 空格 放技能 · 1/2/3 换技能 · R 重置 · Esc 退出　　F1 直接完成（调试）", 24,
+        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD / 方向键 走路 · 空格 放技能 · 1/2/3 换技能 · R 重置 · Esc 退出　　Tab 直接完成（调试）", 24,
             TextAnchor.MiddleCenter, new Color(0.7f, 0.72f, 0.75f), font,
             new Vector2(1400f, 40f), new Vector2(0f, -430f));
 
@@ -293,6 +299,8 @@ public class PuzzleController : EventRoomBase
             skills = list.ToArray();
         }
 
+        if (layout.startX >= 0) { startX = layout.startX; startY = layout.startY; }
+        moveLimit = layout.moveLimit;
         pendingLit = layout.litCells;
 
         Debug.Log("[棋盘] 已按 JSON 加载：" + layoutJson.name + "（" + width + "×" + height + "，" +
@@ -450,6 +458,7 @@ public class PuzzleController : EventRoomBase
         }
 
         selectedSkill = -1;
+        movesUsed = 0;
         SetHint(restoreCharges ? "棋盘与技能次数都已重置" : "棋盘已清空（技能次数不返还）");
         Refresh();
     }
@@ -501,7 +510,8 @@ public class PuzzleController : EventRoomBase
         int playable = board.PlayableCount;
         int percent = Mathf.RoundToInt(board.Coverage * 100f);
         if (coverageText != null)
-            coverageText.text = "覆盖 " + lit + " / " + playable + " · " + percent + "%";
+            coverageText.text = "覆盖 " + lit + " / " + playable + " · " + percent + "%"
+            + (moveLimit > 0 ? "　·　已用 " + movesUsed + " / " + moveLimit + " 步" : "");
 
         CoverageChanged?.Invoke(board.Coverage, lit, playable);
     }
@@ -607,7 +617,16 @@ public class PuzzleController : EventRoomBase
     void CastSelected()
     {
         if (selectedSkill < 0) { SetHint("先按 1/2/3 选一个技能"); return; }
+        if (moveLimit > 0 && movesUsed >= moveLimit)
+        {
+            SetHint("步数用完了（" + movesUsed + " / " + moveLimit + "）· 按 R 重来");
+            return;
+        }
+        if (finished) return;
+
+        int before = board.LitCount;
         OnCellClicked(cursor.x, cursor.y);
+        if (board.LitCount != before) movesUsed++;
     }
 
     void Update()
@@ -622,7 +641,7 @@ public class PuzzleController : EventRoomBase
 
         if (Input.GetKeyDown(KeyCode.R)) { ResetPuzzle(); return; }
 
-        if (allowDebugClear && Input.GetKeyDown(KeyCode.F1))
+        if (allowDebugClear && Input.GetKeyDown(KeyCode.Tab))
         {
             DebugClear();
             return;

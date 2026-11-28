@@ -1,6 +1,9 @@
 {
  "width": 9,
  "height": 8,
+ "startX": 8,
+ "startY": 0,
+ "moveLimit": 10,
  "blockedCells": [
   "0,0",
   "0,1",

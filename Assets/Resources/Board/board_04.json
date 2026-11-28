@@ -1,6 +1,9 @@
 {
  "width": 8,
  "height": 9,
+ "startX": 1,
+ "startY": 0,
+ "moveLimit": 24,
  "blockedCells": [
   "0,0",
   "1,2",
@@ -27,8 +30,8 @@
  "clearThreshold": 1.0,
  "skills": [
   {
-   "name": "竖二",
-   "shape": "col2",
+   "name": "竖三",
+   "shape": "col3",
    "charges": 3
   },
   {
