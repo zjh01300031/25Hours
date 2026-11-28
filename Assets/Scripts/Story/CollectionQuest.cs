@@ -18,6 +18,9 @@ public class CollectionQuest : MonoBehaviour
     public string eventB = "event_02";
     public string sceneB = "Event_02";
 
+    [Header("自动进入（关掉后必须去「收集检查点」交互才会进）")]
+    public bool autoEnter = false;
+
     bool entering;
 
     void Awake()
@@ -61,14 +64,76 @@ public class CollectionQuest : MonoBehaviour
 
         if (!progress.IsEventCleared(eventA))
         {
-            if (totalA > 0 && remainA <= 0) Enter(eventA, sceneA);
+            if (autoEnter && totalA > 0 && remainA <= 0) Enter(eventA, sceneA);
             return;
         }
 
-        if (!progress.IsEventCleared(eventB) && totalB > 0 && remainB <= 0)
+        if (autoEnter && !progress.IsEventCleared(eventB) && totalB > 0 && remainB <= 0)
         {
             Enter(eventB, sceneB);
         }
+    }
+
+    /// <summary>某组还剩几件在场（没捡的）。</summary>
+    public int Remaining(string group)
+    {
+        int n = 0;
+        var all = FindObjectsOfType<Collectible>(true);
+        for (int i = 0; i < all.Length; i++)
+        {
+            var c = all[i];
+            if (c == null || c.group != group) continue;
+            if (c.gameObject.activeSelf) n++;
+        }
+        return n;
+    }
+
+    /// <summary>某组一共有几件（摆了几个就是几个）。</summary>
+    public int Total(string group)
+    {
+        int n = 0;
+        var all = FindObjectsOfType<Collectible>(true);
+        for (int i = 0; i < all.Length; i++)
+        {
+            var c = all[i];
+            if (c != null && c.group == group) n++;
+        }
+        return n;
+    }
+
+    /// <summary>某组还差哪些东西的名字，用来提醒玩家。</summary>
+    public string MissingNames(string group)
+    {
+        var sb = new System.Text.StringBuilder();
+        var all = FindObjectsOfType<Collectible>(true);
+        for (int i = 0; i < all.Length; i++)
+        {
+            var c = all[i];
+            if (c == null || c.group != group) continue;
+            if (!c.gameObject.activeSelf) continue;
+            if (sb.Length > 0) sb.Append("、");
+            sb.Append(string.IsNullOrEmpty(c.displayName) ? c.itemId : c.displayName);
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>外部（收集检查点）调用：这一组收齐了就直接进对应事件。</summary>
+    public bool TryEnter(string group)
+    {
+        var progress = GameProgress.Ensure();
+        if (!progress.IsEventCleared(eventA))
+        {
+            if (Remaining(groupA) <= 0) { Enter(eventA, sceneA); return true; }
+            return false;
+        }
+
+        if (!progress.IsEventCleared(eventB))
+        {
+            if (Remaining(groupB) <= 0) { Enter(eventB, sceneB); return true; }
+            return false;
+        }
+
+        return false;
     }
 
     void Enter(string eventId, string sceneName)
