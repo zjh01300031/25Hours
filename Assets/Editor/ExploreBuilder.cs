@@ -76,18 +76,21 @@ public static class ExploreBuilder
     [MenuItem("工具/25小时/生成事件二（探索区 · 棋盘等设计稿）", false, 17)]
     public static void BuildEvent02()
     {
-        // 事件二先只搭探索区：三个入口留着，棋盘场景等别人设计好再填
+        // 事件二先只搭探索区：三个入口留着，棋盘场景等别人设计好再填。
+        // 棋盘还没设计，所以先放一个「占位事件点」，按空格就算完成，保证事件二能通关。
         BuildExplore("Event_02", "event_02",
             new[] { "棋盘 A", "棋盘 B", "棋盘 C" },
             new[] { "", "", "" },
             new string[0],
-            false);
+            true,
+            true);
+
         SetupBuildSettings();
-        Debug.Log("[探索区] Event_02 已生成（三个入口等待棋盘设计稿）");
+        Debug.Log("[探索区] Event_02 已生成（三个入口等待棋盘设计稿；另放了一个占位事件点，按空格可通关）");
     }
 
     static void BuildExplore(string sceneName, string levelId, string[] titles, string[] boardScenes,
-        string[] requiredEvents, bool returnWhenAllDone)
+        string[] requiredEvents, bool returnWhenAllDone, bool placeholderEvent = false)
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -225,6 +228,31 @@ public static class ExploreBuilder
         flow.levelId = levelId;
         flow.requiredEvents = requiredEvents ?? new string[0];
         flow.returnWhenAllDoneOnStart = returnWhenAllDone;
+
+        if (placeholderEvent)
+        {
+            // 棋盘还没设计好之前，用一个占位事件点让这一层能通关：走近按空格即可。
+            var spot = new GameObject("事件点_占位", typeof(SpriteRenderer), typeof(EventRoomTemplate));
+            spot.transform.position = new Vector3(6.5f, -2.2f, 0f);
+            spot.GetComponent<EventRoomTemplate>().SetEventId(levelId + "_1");
+
+            var spotSr = spot.GetComponent<SpriteRenderer>();
+            spotSr.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            spotSr.drawMode = SpriteDrawMode.Sliced;
+            spotSr.size = new Vector2(1.2f, 1.8f);
+            spotSr.color = new Color(0.98f, 0.66f, 0.28f, 0.95f);
+            spotSr.sortingOrder = 5;
+
+            var label = new GameObject("说明");
+            label.transform.SetParent(spot.transform, false);
+            label.transform.localPosition = new Vector3(0f, 1.25f, 0f);
+            var labelSr = label.AddComponent<SpriteRenderer>();
+            labelSr.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            labelSr.drawMode = SpriteDrawMode.Sliced;
+            labelSr.size = new Vector2(2.6f, 0.16f);
+            labelSr.color = new Color(1f, 0.9f, 0.6f, 0.7f);
+            labelSr.sortingOrder = 5;
+        }
 
         var es = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem),
             typeof(UnityEngine.EventSystems.StandaloneInputModule));
