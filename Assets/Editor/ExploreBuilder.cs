@@ -15,7 +15,7 @@ public static class ExploreBuilder
     const string FontPath = "Assets/Fonts/SimHei.ttf";
     const string PlayerArt = "Assets/Art/Characters/player.png";
 
-    [MenuItem("工具/25小时/生成事件一（探索区 + 三个棋盘）", false, 16)]
+    [MenuItem("工具/25小时/生成事件一（探索区 + 五个棋盘）", false, 16)]
     public static void BuildAll()
     {
         var boards = new[]
@@ -26,9 +26,13 @@ public static class ExploreBuilder
             BuildBoard("Board_04", 8, 9, "board_04", "board_04"),
             BuildBoard("Board_05", 11, 9, "board_05", "board_05"),
         };
-        BuildExplore(boards);
+        BuildExplore("Event_01", "event_01",
+            new[] { "棋盘 1", "棋盘 2", "棋盘 3", "棋盘 4", "棋盘 5" },
+            boards,
+            new[] { "board_01", "board_02", "board_03", "board_04", "board_05" },
+            true);
         SetupBuildSettings();
-        Debug.Log("[探索区] Event_01 + Board_01/02/03 已生成");
+        Debug.Log("[探索区] Event_01 + Board_01~05 已生成");
     }
 
     // ---------------- 棋盘 ----------------
@@ -69,7 +73,21 @@ public static class ExploreBuilder
 
     // ---------------- 探索区 ----------------
 
-    static void BuildExplore(string[] boardScenes)
+    [MenuItem("工具/25小时/生成事件二（探索区 · 棋盘等设计稿）", false, 17)]
+    public static void BuildEvent02()
+    {
+        // 事件二先只搭探索区：三个入口留着，棋盘场景等别人设计好再填
+        BuildExplore("Event_02", "event_02",
+            new[] { "棋盘 A", "棋盘 B", "棋盘 C" },
+            new[] { "", "", "" },
+            new string[0],
+            false);
+        SetupBuildSettings();
+        Debug.Log("[探索区] Event_02 已生成（三个入口等待棋盘设计稿）");
+    }
+
+    static void BuildExplore(string sceneName, string levelId, string[] titles, string[] boardScenes,
+        string[] requiredEvents, bool returnWhenAllDone)
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -160,8 +178,6 @@ public static class ExploreBuilder
             new Vector3(-8f, -2.1f, 0f), new Vector3(-4f, -2.1f, 0f), new Vector3(0f, -2.1f, 0f),
             new Vector3(4f, -2.1f, 0f), new Vector3(8f, -2.1f, 0f),
         };
-        var titles = new[] { "棋盘 1", "棋盘 2", "棋盘 3", "棋盘 4", "棋盘 5" };
-
         for (int i = 0; i < boardScenes.Length && i < positions.Length; i++)
         {
             var gateGo = new GameObject("棋盘入口_" + (i + 1));
@@ -180,7 +196,7 @@ public static class ExploreBuilder
             gcol.radius = 0.9f;
 
             var gate = gateGo.AddComponent<BoardGate>();
-            gate.gateTitle = titles[i];
+            gate.gateTitle = (titles != null && i < titles.Length) ? titles[i] : ("棋盘 " + (i + 1));
             gate.introText = "一座矮台，台面上有个凹槽，正好能嵌进一个人偶。";
             gate.requiredItemId = "item_doll";
             gate.requiredItemName = "人偶";
@@ -192,27 +208,27 @@ public static class ExploreBuilder
         var bagGo = new GameObject("背包", typeof(InventoryUI));
         var bag = bagGo.GetComponent<InventoryUI>();
         bag.font = AssetDatabase.LoadAssetAtPath<Font>(FontPath);
-        bag.boards = new[]
+        bag.boards = levelId == "event_01" ? new[]
         {
             new InventoryUI.BoardLink { itemId = "item_01", sceneName = "Board_01", label = "带着它走进棋盘 1…" },
             new InventoryUI.BoardLink { itemId = "item_02", sceneName = "Board_02", label = "带着它走进棋盘 2…" },
             new InventoryUI.BoardLink { itemId = "item_03", sceneName = "Board_03", label = "带着它走进棋盘 3…" },
             new InventoryUI.BoardLink { itemId = "item_04", sceneName = "Board_04", label = "带着它走进棋盘 4…" },
             new InventoryUI.BoardLink { itemId = "item_05", sceneName = "Board_05", label = "带着它走进棋盘 5…" },
-        };
+        } : new InventoryUI.BoardLink[0];
 
         // 收尾：三块棋盘都打完就回第 0 层
         var flowGo = new GameObject("收尾", typeof(LevelFlow));
         var flow = flowGo.GetComponent<LevelFlow>();
         flow.returnScene = "Shelter_L0";
-        flow.levelId = "event_01";
-        flow.requiredEvents = new[] { "board_01", "board_02", "board_03", "board_04", "board_05" };
-        flow.returnWhenAllDoneOnStart = true;
+        flow.levelId = levelId;
+        flow.requiredEvents = requiredEvents ?? new string[0];
+        flow.returnWhenAllDoneOnStart = returnWhenAllDone;
 
         var es = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem),
             typeof(UnityEngine.EventSystems.StandaloneInputModule));
 
-        EditorSceneManager.SaveScene(scene, SceneDir + "/Event_01.unity");
+        EditorSceneManager.SaveScene(scene, SceneDir + "/" + sceneName + ".unity");
     }
 
     struct Box2D

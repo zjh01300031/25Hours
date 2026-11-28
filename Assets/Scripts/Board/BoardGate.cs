@@ -194,6 +194,12 @@ public class BoardGate : MonoBehaviour
                 for (int i = 0; i < dollArts.Length; i++)
                     if (dollArts[i] != null && dollArts[i].itemId == requiredItemId) debugArt = dollArts[i].sprite;
 
+            if (string.IsNullOrEmpty(boardScene))
+            {
+                Say("这块棋盘还在设计，先把人偶收着吧");
+                return;
+            }
+
             BoardSession.Set(requiredItemId, requiredItemName, debugArt);
             Close("（调试）放了一个空人偶进去");
             SceneFade.FadeTo(boardScene, 0.45f, 0.25f, 0.8f);
@@ -212,6 +218,12 @@ public class BoardGate : MonoBehaviour
             for (int i = 0; i < dollArts.Length; i++)
                 if (dollArts[i] != null && dollArts[i].itemId == picked.Key) art = dollArts[i].sprite;
         }
+        if (string.IsNullOrEmpty(boardScene))
+        {
+            Say("这块棋盘还在设计，先把人偶收着吧");
+            return;
+        }
+
         BoardSession.Set(picked.Key, GameProgress.Ensure().ItemName(picked.Key), art);
 
         if (consumeItem) GameProgress.Ensure().RemoveItem(requiredItemId, 1);
