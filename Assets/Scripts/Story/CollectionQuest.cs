@@ -39,6 +39,13 @@ public class CollectionQuest : MonoBehaviour
     }
 
     /// <summary>每次捡起东西后调用：看看这组是不是空了，空了就进事件。</summary>
+    /// <summary>这一组凑够之后要进哪个事件（A → eventA，B → eventB）。</summary>
+    public string EventOf(string group)
+    {
+        if (string.IsNullOrEmpty(group)) return eventA;
+        return group.Trim().ToUpperInvariant() == groupB.Trim().ToUpperInvariant() ? eventB : eventA;
+    }
+
     public void Refresh()
     {
         if (entering) return;

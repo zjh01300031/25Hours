@@ -32,6 +32,16 @@ public class Collectible : InteractableBase
             && !GameProgress.Ensure().IsEventCleared(requiresEventId))
         {
             gameObject.SetActive(false);
+            return;
+        }
+
+        // 这一组对应的事件已经打完了：这些收集物就不该再出现
+        var quest = CollectionQuest.Instance;
+        if (quest != null)
+        {
+            string doneEvent = quest.EventOf(group);
+            if (!string.IsNullOrEmpty(doneEvent) && GameProgress.Ensure().IsEventCleared(doneEvent))
+                gameObject.SetActive(false);
         }
     }
 

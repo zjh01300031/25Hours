@@ -603,7 +603,9 @@ MonoBehaviour:
   verb: "\u5BF9\u8BDD"
   highlight: {fileID: 0}
   speaker: "\u767D\u53D1\u5C11\u5973"
-  talkLines: []
+  talkLines:
+  - "\u3010\u2026\u2026\u3011"
+  - "\u3010\u8FD8\u4E0D\u80FD\u544A\u8BC9\u4F60\uFF0C\u4F60\u7EE7\u7EED\u56DE\u5FC6\u5427\u3011"
   options: []
   font: {fileID: 12800000, guid: 367ad0adafc1591488c121c9838778e3, type: 3}
   afterTalkHint: "\u53BB\u63A2\u7D22\u53E6\u4E00\u4E2A\u7A7A\u95F4\u5427"
@@ -1773,7 +1775,8 @@ MonoBehaviour:
   blackHold: 2
   fadeIn: 1
   color: {r: 1, g: 0.92, b: 0.6, a: 0.85}
-  size: {x: 0.5, y: 2.4}
+  size: {x: 1.2, y: 2.8}
+  firstHint: "\u53BB\u63A2\u7D22\u53E6\u4E00\u4E2A\u7A7A\u95F4\u5427"
 --- !u!4 &820532367
 Transform:
   m_ObjectHideFlags: 0
