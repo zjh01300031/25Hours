@@ -188,15 +188,8 @@ public class BoardIntroUI : MonoBehaviour
             }
         }
 
-        t = 0f;
-        while (t < 0.3f)
-        {
-            t += Time.unscaledDeltaTime;
-            group.alpha = 1f - Mathf.Clamp01(t / 0.3f);
-            yield return null;
-        }
-        group.alpha = 0f;
-        canvas.enabled = false;
+        // 播完保持全黑，交给 SceneFade 直接切场景——中间不再露出探索区
+        group.alpha = 1f;
         playing = false;
 
         if (player != null) player.InputEnabled = wasPlayerEnabled;

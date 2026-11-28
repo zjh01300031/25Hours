@@ -194,7 +194,8 @@ public class BoardGate : MonoBehaviour
         ui.Play(slides, () =>
         {
             InputGate.Release();
-            SceneFade.FadeTo(scene, 0.45f, 0.25f, 0.8f);
+            // 演出结束时屏幕已经是全黑，淡出时间给到最短，直接开场棋盘
+            SceneFade.FadeTo(scene, 0.02f, 0.25f, 0.8f);
         });
     }
 
