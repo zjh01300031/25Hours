@@ -99,11 +99,20 @@ public class PuzzleController : EventRoomBase
     protected override void Start()
     {
         base.Start();
+        RemoveEditorPreview();
         BuildBoard();
         BuildUI();
         if (selectedSkill < 0 && skills.Length > 0) selectedSkill = 0;
         Refresh();
         UpdateCursor();
+    }
+
+    /// <summary>进入 Play 时先删掉编辑模式留下的静态预览，再画能点的那套。</summary>
+    static void RemoveEditorPreview()
+    {
+        var previews = FindObjectsOfType<BoardPreviewMarker>(true);
+        for (int i = 0; i < previews.Length; i++)
+            Destroy(previews[i].gameObject);
     }
 
     void BuildBoard()

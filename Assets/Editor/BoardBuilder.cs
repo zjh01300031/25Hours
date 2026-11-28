@@ -45,6 +45,7 @@ public static class BoardBuilder
         board.avatarSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Characters/player.png");
 
         Directory.CreateDirectory("Assets/Scenes");
+        BoardPreview.Build(board);
         EditorSceneManager.SaveScene(scene, ScenePath);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
