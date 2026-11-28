@@ -6,8 +6,11 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 投人偶之后、真正进棋盘之前的那段文案演出。
-/// 一页一行字，像 PPT 那样淡入、停顿，按空格/回车/左键翻页；最后一页按完就执行回调（通常去切场景）。
-/// 文案写在 BoardGate 的 Intro Slides 里；不写就用根据入口标题自动拼的默认文案。
+/// 一页一行字：先整页淡入，标题与正文同时出现在屏幕上，停一会儿，按空格/回车/左键翻页。
+/// 最后一页翻完就执行回调（通常去切场景）。
+///
+/// 文案写在 BoardGate 的 Intro Slides 里，一行一页；「标题|正文」会把第一段当标题。
+/// 不写就用 BoardGate.DefaultSlides() 的三页占位。
 /// </summary>
 public class BoardIntroUI : MonoBehaviour
 {
@@ -25,7 +28,8 @@ public class BoardIntroUI : MonoBehaviour
         return go.AddComponent<BoardIntroUI>();
     }
 
-    // ---------------- 运行时状态 ----------------
+    [Tooltip("每页最少停留多少秒（防止手快连按直接跳过整段）")]
+    public float minHold = 0.55f;
 
     Canvas canvas;
     CanvasGroup group;
@@ -35,12 +39,10 @@ public class BoardIntroUI : MonoBehaviour
     Font font;
 
     bool playing;
-    bool advance;
     int index;
-    float shownAt;
-    float holdSeconds = 0.9f;
-    List<string[]> pages = new List<string[]>();
+    float pageShownAt;
     Action onDone;
+    readonly List<string[]> pages = new List<string[]>();
 
     void Awake()
     {
@@ -53,19 +55,19 @@ public class BoardIntroUI : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    /// <summary>播一串文案，播完调 onDone。一行一页；「标题|正文」会把第一段当标题。</summary>
     public void Play(string[] lines, Action done)
     {
         if (playing) return;
 
-        onDone = done;
         pages.Clear();
         if (lines != null)
         {
             for (int i = 0; i < lines.Length; i++)
             {
-                if (string.IsNullOrEmpty(lines[i])) continue;
+                if (lines[i] == null) continue;
                 var raw = lines[i].Replace("\r", "");
+                if (raw.Trim().Length == 0) continue;
+
                 int bar = raw.IndexOf('|');
                 if (bar >= 0)
                     pages.Add(new[] { raw.Substring(0, bar).Trim(), raw.Substring(bar + 1).Trim() });
@@ -74,9 +76,16 @@ public class BoardIntroUI : MonoBehaviour
             }
         }
 
-        if (pages.Count == 0) { if (done != null) done(); return; }
+        if (pages.Count == 0)
+        {
+            Debug.LogWarning("[开场文案] 没有可播放的文字，直接继续");
+            if (done != null) done();
+            return;
+        }
 
+        onDone = done;
         Build();
+        gameObject.SetActive(true);
         StartCoroutine(Run());
     }
 
@@ -84,37 +93,38 @@ public class BoardIntroUI : MonoBehaviour
     {
         if (canvas != null) return;
 
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        var simhei = Font.CreateDynamicFontFromOSFont(new[] { "SimHei", "Microsoft YaHei" }, 32);
-        if (simhei != null) font = simhei;
+        font = Resources.Load<Font>("Fonts/SimHei");
+        if (font == null) font = Font.CreateDynamicFontFromOSFont(new[] { "SimHei", "Microsoft YaHei" }, 32);
+        if (font == null) font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         canvas = RuntimeUI.CreateCanvas("开场文案", 75);
         canvas.transform.SetParent(transform, false);
         group = canvas.gameObject.AddComponent<CanvasGroup>();
         group.alpha = 0f;
+        group.blocksRaycasts = true;
 
+        // 全屏黑幕（盖住探索区，顺便挡住点击）
         var backdrop = RuntimeUI.Panel(canvas.transform, "黑幕", new Vector2(1920f, 1080f), Vector2.zero,
-            new Color(0.03f, 0.035f, 0.045f, 0.97f));
+            new Color(0.03f, 0.035f, 0.045f, 0.985f));
         backdrop.anchorMin = Vector2.zero;
         backdrop.anchorMax = Vector2.one;
         backdrop.offsetMin = Vector2.zero;
         backdrop.offsetMax = Vector2.zero;
-        backdrop.GetComponent<Image>().raycastTarget = false;
 
-        titleText = RuntimeUI.Label(canvas.transform, "标题", "", 64,
-            TextAnchor.MiddleCenter, new Color(0.98f, 0.94f, 0.86f), font,
-            new Vector2(1500f, 120f), new Vector2(0f, 120f));
+        titleText = RuntimeUI.Label(canvas.transform, "标题", "", 60,
+            TextAnchor.LowerCenter, new Color(0.98f, 0.94f, 0.87f, 1f), font,
+            new Vector2(1500f, 110f), new Vector2(0f, 70f));
         titleText.raycastTarget = false;
 
         bodyText = RuntimeUI.Label(canvas.transform, "正文", "", 34,
-            TextAnchor.UpperCenter, new Color(0.88f, 0.90f, 0.94f), font,
-            new Vector2(1320f, 520f), new Vector2(0f, -80f));
+            TextAnchor.UpperCenter, new Color(0.88f, 0.90f, 0.94f, 1f), font,
+            new Vector2(1300f, 560f), new Vector2(0f, -90f));
         bodyText.raycastTarget = false;
-        bodyText.lineSpacing = 1.5f;
+        bodyText.lineSpacing = 1.55f;
 
         footerText = RuntimeUI.Label(canvas.transform, "页脚", "", 24,
-            TextAnchor.MiddleCenter, new Color(0.62f, 0.66f, 0.72f), font,
-            new Vector2(1500f, 40f), new Vector2(0f, -430f));
+            TextAnchor.MiddleCenter, new Color(0.62f, 0.66f, 0.72f, 1f), font,
+            new Vector2(1500f, 40f), new Vector2(0f, -440f));
         footerText.raycastTarget = false;
 
         canvas.enabled = false;
@@ -123,24 +133,43 @@ public class BoardIntroUI : MonoBehaviour
     IEnumerator Run()
     {
         playing = true;
-        advance = false;
         canvas.enabled = true;
         group.alpha = 0f;
 
-        // 先压黑
+        bool wasPlayerEnabled = true;
+        var player = FindObjectOfType<ShelterPlayer>();
+        if (player != null) { wasPlayerEnabled = player.InputEnabled; player.InputEnabled = false; }
+
+        var walker = FindObjectOfType<TopDownPlayer>();
+        bool wasWalkerEnabled = true;
+        if (walker != null) { wasWalkerEnabled = walker.inputEnabled; walker.inputEnabled = false; }
+
+        // 先压黑，避免上一帧的按键被当成翻页
         float t = 0f;
-        while (t < 0.28f)
+        while (t < 0.25f)
         {
             t += Time.unscaledDeltaTime;
-            group.alpha = Mathf.Clamp01(t / 0.28f);
+            group.alpha = Mathf.Clamp01(t / 0.25f);
             yield return null;
         }
         group.alpha = 1f;
 
-        for (index = 0; index < pages.Count; index++)
-            yield return ShowPage(pages[index]);
+        // 开场这一下按的键不算翻页
+        yield return null;
+        yield return null;
 
-        // 收尾淡出
+        for (index = 0; index < pages.Count; index++)
+        {
+            Show(index);
+            pageShownAt = Time.unscaledTime;
+
+            // 先空转一小会儿，再接受翻页
+            while (Time.unscaledTime - pageShownAt < minHold) yield return null;
+
+            while (!WantsAdvance()) yield return null;
+            yield return null;
+        }
+
         t = 0f;
         while (t < 0.3f)
         {
@@ -152,61 +181,23 @@ public class BoardIntroUI : MonoBehaviour
         canvas.enabled = false;
         playing = false;
 
+        if (player != null) player.InputEnabled = wasPlayerEnabled;
+        if (walker != null) walker.inputEnabled = wasWalkerEnabled;
+
         var callback = onDone;
         onDone = null;
         if (callback != null) callback();
     }
 
-    IEnumerator ShowPage(string[] page)
+    void Show(int pageIndex)
     {
-        string title = page[0];
-        string body = page[1];
+        var page = pages[pageIndex];
+        titleText.text = page[0];
+        bodyText.text = string.IsNullOrEmpty(page[1]) ? "（这一页还没有文字）" : page[1];
+        footerText.text = "空格 / 回车 / 左键　翻页　·　" + (pageIndex + 1) + " / " + pages.Count;
 
-        titleText.text = title;
-        bodyText.text = body;
-        footerText.text = "空格 / 回车 / 左键　翻页　　·　　" + (index + 1) + " / " + pages.Count;
-
-        // 标题从下方 24px 处淡入，正文稍晚一点淡入 —— 就是那种 PPT 逐条出来的感觉
-        var titleRect = titleText.rectTransform;
-        Vector2 titleHome = titleRect.anchoredPosition;
-        titleRect.anchoredPosition = titleHome + new Vector2(0f, -24f);
-        SetAlpha(titleText, 0f);
-        SetAlpha(bodyText, 0f);
-        SetAlpha(footerText, 0f);
-
-        float t = 0f;
-        while (t < 0.42f)
-        {
-            t += Time.unscaledDeltaTime;
-            float k = Mathf.Clamp01(t / 0.42f);
-            titleRect.anchoredPosition = Vector2.Lerp(titleHome + new Vector2(0f, -24f), titleHome, Ease(k));
-            SetAlpha(titleText, k);
-            yield return null;
-        }
-        titleRect.anchoredPosition = titleHome;
-        SetAlpha(titleText, 1f);
-
-        t = 0f;
-        while (t < 0.5f)
-        {
-            t += Time.unscaledDeltaTime;
-            float k = Mathf.Clamp01((t - 0.12f) / 0.38f);
-            SetAlpha(bodyText, k);
-            SetAlpha(footerText, k);
-            yield return null;
-        }
-        SetAlpha(bodyText, 1f);
-        SetAlpha(footerText, 1f);
-
-        shownAt = Time.unscaledTime;
-        advance = false;
-
-        while (!advance || Time.unscaledTime - shownAt < holdSeconds)
-        {
-            if (Time.unscaledTime - shownAt >= holdSeconds && WantsAdvance()) advance = true;
-            yield return null;
-        }
-        advance = false;
+        Debug.Log("[开场文案] 第 " + (pageIndex + 1) + " / " + pages.Count + " 页：" +
+                  (titleText.text.Length > 0 ? titleText.text + " | " : "") + bodyText.text);
     }
 
     static bool WantsAdvance()
@@ -216,18 +207,5 @@ public class BoardIntroUI : MonoBehaviour
             || Input.GetKeyDown(KeyCode.Return)
             || Input.GetKeyDown(KeyCode.KeypadEnter)
             || Input.GetMouseButtonDown(0);
-    }
-
-    static void SetAlpha(Graphic graphic, float alpha)
-    {
-        if (graphic == null) return;
-        var c = graphic.color;
-        c.a = alpha;
-        graphic.color = c;
-    }
-
-    static float Ease(float k)
-    {
-        return 1f - Mathf.Pow(1f - k, 3f);
     }
 }
