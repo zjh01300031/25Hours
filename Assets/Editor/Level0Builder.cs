@@ -558,9 +558,22 @@ public static class Level0Builder
         Directory.CreateDirectory(BuildDir);
         SetupProjectSettings();
 
+        // 用 Build Settings 里勾上的场景，顺序就是打包后的启动顺序（第一个是主菜单）
+        var sceneList = new System.Collections.Generic.List<string>();
+        foreach (var s in EditorBuildSettings.scenes)
+        {
+            if (s.enabled && !string.IsNullOrEmpty(s.path)) sceneList.Add(s.path);
+        }
+        if (sceneList.Count == 0)
+        {
+            sceneList.Add(ShelterScenePath);
+            sceneList.Add(Event01ScenePath);
+            sceneList.Add(Event02ScenePath);
+        }
+
         var options = new BuildPlayerOptions
         {
-            scenes = new[] { ShelterScenePath, Event01ScenePath, Event02ScenePath },
+            scenes = sceneList.ToArray(),
             locationPathName = BuildExe,
             target = BuildTarget.StandaloneWindows64,
             options = BuildOptions.None,
