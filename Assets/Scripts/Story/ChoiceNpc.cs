@@ -70,6 +70,18 @@ public class ChoiceNpc : InteractableBase
 
         if (ShelterDialogue.Instance != null) ShelterDialogue.Instance.Show(speaker, use);
         else Debug.Log(speaker + "：" + string.Join(" / ", use));
+
+        if (!string.IsNullOrEmpty(afterTalkHint)) StartCoroutine(HintAfterDialogue());
+    }
+
+    /// <summary>等对话关掉之后，屏幕中间出那行大字。</summary>
+    IEnumerator HintAfterDialogue()
+    {
+        yield return null;
+        while (ShelterDialogue.IsOpen) yield return null;
+
+        yield return new WaitForSecondsRealtime(0.25f);
+        CenterHint.Show(afterTalkHint);
     }
 }
 
