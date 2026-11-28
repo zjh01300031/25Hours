@@ -36,6 +36,11 @@ public class BoardGate : MonoBehaviour
     [Header("人偶立绘（美术给了就填：itemId -> 立绘）")]
     public DollArt[] dollArts = new DollArt[0];
 
+    [Tooltip("白盒阶段：背包里没有人偶时，也给一个「调试人偶」方便试玩。上线前关掉")]
+    public bool allowDebugDoll = true;
+
+    const string DebugKey = "__debug_doll";
+
     [Header("触发")]
     public float triggerRadius = 1.8f;
     public Color gateColor = new Color(0.55f, 0.78f, 0.95f, 1f);
@@ -109,6 +114,7 @@ public class BoardGate : MonoBehaviour
         items.Clear();
         var progress = GameProgress.Ensure();
         foreach (var kv in progress.Items) items.Add(kv);
+        if (items.Count == 0 && allowDebugDoll) items.Add(new KeyValuePair<string, int>(DebugKey, 1));
         cursor = 0;
 
         BuildUI();
@@ -134,6 +140,20 @@ public class BoardGate : MonoBehaviour
         }
 
         var picked = items[Mathf.Clamp(cursor, 0, items.Count - 1)];
+
+        if (picked.Key == DebugKey)
+        {
+            Sprite debugArt = null;
+            if (dollArts != null)
+                for (int i = 0; i < dollArts.Length; i++)
+                    if (dollArts[i] != null && dollArts[i].itemId == requiredItemId) debugArt = dollArts[i].sprite;
+
+            BoardSession.Set(requiredItemId, requiredItemName, debugArt);
+            Close("（调试）放了一个空人偶进去");
+            SceneFade.FadeTo(boardScene, 0.45f, 0.25f, 0.8f);
+            return;
+        }
+
         if (picked.Key != requiredItemId)
         {
             if (ShelterHUD.Instance != null)
@@ -195,7 +215,7 @@ public class BoardGate : MonoBehaviour
             for (int i = 0; i < items.Count; i++)
             {
                 sb.Append(i == cursor ? "▶ " : "   ");
-                sb.Append(GameProgress.Ensure().ItemName(items[i].Key));
+                sb.Append(items[i].Key == DebugKey ? requiredItemName + "（调试用）" : GameProgress.Ensure().ItemName(items[i].Key));
                 sb.Append("  ×");
                 sb.Append(items[i].Value);
                 sb.AppendLine();
