@@ -191,6 +191,32 @@ public static class UpperRoomBuilder
         go.layer = LayerMask.NameToLayer("Ground");
     }
 
+
+    // 门原来放在地板外面（x=11.4，地板只到 x=10），玩家够不到，挪进来一点。
+    [MenuItem("工具/25小时/把二层通道挪到地板范围内", false, 19)]
+    public static void FixPortalPositions()
+    {
+        var scene = EditorSceneManager.OpenScene(GroundFloorScene, OpenSceneMode.Single);
+
+        foreach (var portal in Object.FindObjectsOfType<RoomPortal>(true))
+        {
+            if (portal.gameObject.name.Contains("\u4e8c\u5c42") || portal.gameObject.name.Contains("二层"))
+                portal.transform.position = new Vector3(9.6f, 1.2f, 0f);
+        }
+
+        foreach (var t in Object.FindObjectsOfType<Transform>(true))
+        {
+            if (t.name.Contains("\u5230\u8fbe\u70b9_\u4e00\u5c42") || t.name.Contains("到达点_一层"))
+                t.position = new Vector3(8.2f, 1.0f, 0f);
+            if (t.name.Contains("\u901a\u9053\u6307\u793a") || t.name.Contains("通道指示"))
+                t.position = new Vector3(9.2f, 2.2f, 0f);
+        }
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+        Debug.Log("[二层] 通道已挪到地板范围内（x=9.6）");
+    }
+
     static void Marker2(string name, Vector3 pos)
     {
         var go = new GameObject(name);
