@@ -22,6 +22,25 @@ public static class BoardSession
         DollSprite = sprite;
     }
 
+    static Vector3 returnPos;
+    static bool hasReturn;
+
+    /// <summary>进棋盘前记一下玩家站在哪，回来就还站在那。</summary>
+    public static void SetReturn(Vector3 pos)
+    {
+        returnPos = pos;
+        hasReturn = true;
+    }
+
+    /// <summary>取一次回来位置（取完就清掉）。</summary>
+    public static bool ConsumeReturn(out Vector3 pos)
+    {
+        pos = returnPos;
+        bool ok = hasReturn;
+        hasReturn = false;
+        return ok;
+    }
+
     public static void Clear()
     {
         DollItemId = "";

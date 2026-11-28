@@ -27,6 +27,18 @@ public class TopDownPlayer : MonoBehaviour
     Vector3 basePos;
     float timer;
 
+    void Start()
+    {
+        // 从棋盘回来时，站在进门前的位置（而不是场景出生点）
+        Vector3 back;
+        if (BoardSession.ConsumeReturn(out back))
+        {
+            transform.position = back;
+            var body = GetComponent<Rigidbody2D>();
+            if (body != null) body.position = back;
+        }
+    }
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();

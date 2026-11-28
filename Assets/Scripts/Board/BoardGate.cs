@@ -200,6 +200,7 @@ public class BoardGate : MonoBehaviour
                 return;
             }
 
+            BoardSession.SetReturn(ReturnMark());
             BoardSession.Set(requiredItemId, requiredItemName, debugArt);
             Close("（调试）放了一个空人偶进去");
             SceneFade.FadeTo(boardScene, 0.45f, 0.25f, 0.8f);
@@ -224,6 +225,7 @@ public class BoardGate : MonoBehaviour
             return;
         }
 
+        BoardSession.SetReturn(ReturnMark());
         BoardSession.Set(picked.Key, GameProgress.Ensure().ItemName(picked.Key), art);
 
         if (consumeItem) GameProgress.Ensure().RemoveItem(requiredItemId, 1);
@@ -256,6 +258,14 @@ public class BoardGate : MonoBehaviour
 
         hintText = RuntimeUI.Label(panel, "提示", "", 24, TextAnchor.MiddleCenter,
             new Color(0.7f, 0.72f, 0.76f), font, new Vector2(900f, 44f), new Vector2(0f, -210f));
+    }
+
+    /// <summary>回来时站的位置：玩家进门前站的地方；拿不到就用这扇门的位置。</summary>
+    Vector3 ReturnMark()
+    {
+        if (topdown != null) return topdown.transform.position;
+        if (actor != null) return actor.transform.position;
+        return transform.position;
     }
 
     void Say(string text)
