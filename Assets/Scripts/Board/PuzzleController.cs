@@ -224,8 +224,7 @@ public class PuzzleController : EventRoomBase
             button.onClick.AddListener(() => SelectSkill(index));
             skillButtons.Add(button);
 
-            skillTexts.Add(RuntimeUI.Label(slot, "名", skills[i].name, 30,
-                TextAnchor.MiddleCenter, textColor, font, new Vector2(220f, 40f), new Vector2(0f, 10f)));
+            BuildSkillIcon(slot, skills[i].shape);
 
             skillChargeTexts.Add(RuntimeUI.Label(slot, "次", "", 24,
                 TextAnchor.MiddleCenter, accentColor, font, new Vector2(220f, 30f), new Vector2(0f, -16f)));
@@ -292,6 +291,26 @@ public class PuzzleController : EventRoomBase
 
     // ---------------- 交互 ----------------
 
+    /// <summary>技能按钮里画一个 3×3 的小图：亮起来的那几格就是这个技能会点亮的位置。</summary>
+    void BuildSkillIcon(RectTransform slot, PuzzleShape shape)
+    {
+        var offsets = new List<Vector2Int>(PuzzleSkill.Offsets(shape));
+        float cell = 16f, step = 20f;
+
+        for (int y = -1; y <= 1; y++)
+        {
+            for (int x = -1; x <= 1; x++)
+            {
+                bool on = offsets.Contains(new Vector2Int(x, y));
+                var pos = new Vector2(x * step, 8f + y * step);
+                var dot = RuntimeUI.Panel(slot, "点", new Vector2(cell, cell), pos,
+                    on ? accentColor : new Color(0.45f, 0.48f, 0.54f, 0.35f));
+                var image = dot.GetComponent<Image>();
+                image.raycastTarget = false;
+            }
+        }
+    }
+
     void SelectSkill(int index)
     {
         if (finished) return;
@@ -302,7 +321,7 @@ public class PuzzleController : EventRoomBase
         }
 
         selectedSkill = index;
-        SetHint("已选「" + skills[index].name + "」，点棋格里的一格");
+        SetHint("已选第 " + (index + 1) + " 个技能（看按钮上的小图案），空格或点格子放");
         Refresh();
     }
 
@@ -419,7 +438,7 @@ public class PuzzleController : EventRoomBase
             if (i == selectedSkill) image.color = new Color(0.95f, 0.72f, 0.35f, 1f);
             else image.color = usable ? new Color(0.22f, 0.25f, 0.31f, 1f) : new Color(0.13f, 0.14f, 0.16f, 1f);
 
-            skillTexts[i].color = usable ? textColor : new Color(0.55f, 0.55f, 0.55f);
+            if (i < skillTexts.Count) skillTexts[i].color = usable ? textColor : new Color(0.55f, 0.55f, 0.55f);
             skillButtons[i].interactable = usable;
         }
 

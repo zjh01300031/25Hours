@@ -72,7 +72,7 @@ public static class BoardPreview
         {
             float x = -totalWidth * 0.5f + 115f + i * 246f;
             var slot = Panel(root, "技能_" + names[i], new Vector2(230f, 76f), new Vector2(x, -350f), new Color(0.22f, 0.25f, 0.31f, 1f));
-            Label(slot, "名", names[i], 30, font, c.textColor, new Vector2(220f, 40f), new Vector2(0f, 10f));
+            Icon(slot, i, c.accentColor);
             Label(slot, "次", "× " + charges[i], 24, font, c.accentColor, new Vector2(220f, 30f), new Vector2(0f, -16f));
         }
 
@@ -80,6 +80,29 @@ public static class BoardPreview
         Label(root, "重置字", "重置 (R)", 26, font, c.textColor, new Vector2(170f, 56f), new Vector2(820f, -350f));
         Label(root, "提示", "WASD / 方向键 走路 · 空格 放技能 · 1/2/3 换技能 · R 重置 · Esc 退出", 24, font,
             new Color(0.7f, 0.72f, 0.75f), new Vector2(1400f, 40f), new Vector2(0f, -430f));
+    }
+
+    static void Icon(Transform slot, int index, Color on)
+    {
+        bool[,] grid = new bool[3, 3];
+        switch (index)
+        {
+            case 0: grid[1, 1] = true; break;
+            case 1:
+                grid[1, 1] = grid[1, 0] = grid[1, 2] = grid[0, 1] = grid[2, 1] = true; break;
+            default:
+                for (int y = 0; y < 3; y++) for (int x = 0; x < 3; x++) grid[x, y] = true; break;
+        }
+
+        for (int y = -1; y <= 1; y++)
+        {
+            for (int x = -1; x <= 1; x++)
+            {
+                bool lit = grid[x + 1, y + 1];
+                Panel(slot, "点", new Vector2(16f, 16f), new Vector2(x * 20f, 8f + y * 20f),
+                    lit ? on : new Color(0.45f, 0.48f, 0.54f, 0.35f));
+            }
+        }
     }
 
     static RectTransform Panel(Transform parent, string name, Vector2 size, Vector2 pos, Color color)
