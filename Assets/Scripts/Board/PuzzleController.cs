@@ -165,7 +165,10 @@ public class PuzzleController : EventRoomBase
         var canvas = RuntimeUI.CreateCanvas("棋盘UI", 50);
         RuntimeUI.Panel(canvas.transform, "背景", new Vector2(4000f, 3000f), Vector2.zero, frameColor);
 
-        RuntimeUI.Label(canvas.transform, "标题", "事件一 · 内层棋盘（白盒）", 42,
+        string titleText = string.IsNullOrEmpty(BoardSession.DollName)
+            ? "事件一 · 内层棋盘（白盒）"
+            : "事件一 · " + BoardSession.DollName + " 的内层棋盘";
+        RuntimeUI.Label(canvas.transform, "标题", titleText, 42,
             TextAnchor.MiddleCenter, textColor, font, new Vector2(1200f, 60f), new Vector2(0f, 470f));
 
         coverageText = RuntimeUI.Label(canvas.transform, "覆盖率", "", 30,
@@ -208,7 +211,8 @@ public class PuzzleController : EventRoomBase
         var avatar = RuntimeUI.Panel(boardRoot.transform, "小人",
             new Vector2(cellSize * 0.5f, cellSize * 0.72f), CellPosition(cursor.x, cursor.y), Color.white);
         avatarImage = avatar.GetComponent<Image>();
-        avatarImage.sprite = avatarSprite != null ? avatarSprite : Marker.White;
+        var sprite = BoardSession.DollSprite != null ? BoardSession.DollSprite : avatarSprite;
+        avatarImage.sprite = sprite != null ? sprite : Marker.White;
         avatarImage.type = Image.Type.Simple;
         avatarImage.color = new Color(0.9f, 0.33f, 0.28f, 1f);
         avatarImage.raycastTarget = false;

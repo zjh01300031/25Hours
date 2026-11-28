@@ -26,7 +26,7 @@ public class ShelterInteractor : MonoBehaviour
             if (current != null) current.SetHighlight(true);
         }
 
-        bool dialogueOpen = ShelterDialogue.IsOpen || ChoiceUI.IsOpen || InventoryUI.IsOpen;
+        bool dialogueOpen = ShelterDialogue.IsOpen || ChoiceUI.IsOpen || InventoryUI.IsOpen || BoardGate.IsOpen;
         string prompt = (current == null || dialogueOpen) ? null : current.PromptText;
         if (prompt != lastPrompt)
         {
