@@ -70,6 +70,9 @@ public class PuzzleController : EventRoomBase
     public event Action Cleared;
 
     /// <summary>当前覆盖率（0~1），外部系统直接读这个。</summary>
+    /// <summary>这一关的行动次数上限（0 或负数 = 不限）。</summary>
+    public int MoveLimit { get { return moveLimit; } }
+
     public float Coverage { get { return board == null ? 0f : board.Coverage; } }
 
     /// <summary>是否已经通关。</summary>
@@ -85,6 +88,7 @@ public class PuzzleController : EventRoomBase
     readonly List<Text> skillChargeTexts = new List<Text>();
 
     Text coverageText;
+    Text actionText;
     Text hintText;
     Text winText;
     int[] initialCharges;
@@ -203,8 +207,12 @@ public class PuzzleController : EventRoomBase
         RuntimeUI.Panel(canvas.transform, "背景", new Vector2(4000f, 3000f), Vector2.zero, frameColor);
 
         // 不再画顶部大字标题（人偶名放在覆盖率那一行里）
-        coverageText = RuntimeUI.Label(canvas.transform, "覆盖率", "", 30,
-            TextAnchor.MiddleCenter, accentColor, font, new Vector2(1200f, 44f), new Vector2(0f, 470f));
+        // 行动次数单独一行，放在最显眼的位置（换方向走一步就扣 1 次）
+        actionText = RuntimeUI.Label(canvas.transform, "行动", "", 34,
+            TextAnchor.MiddleCenter, Color.white, font, new Vector2(1500f, 46f), new Vector2(0f, 470f));
+
+        coverageText = RuntimeUI.Label(canvas.transform, "覆盖率", "", 26,
+            TextAnchor.MiddleCenter, accentColor, font, new Vector2(1200f, 44f), new Vector2(0f, 420f));
 
         // 棋盘
         var boardRoot = new GameObject("棋盘", typeof(RectTransform));
@@ -284,7 +292,7 @@ public class PuzzleController : EventRoomBase
         RuntimeUI.Label(reset, "字", "重置 (R)", 26, TextAnchor.MiddleCenter, textColor, font,
             new Vector2(170f, 56f), Vector2.zero);
 
-        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD 移动（同向连走只算 1 次行动）· 1-6 选技能 · ←→↑↓ 翻转 · 空格 释放 · Z 撤销 · R 重置 · Esc 退出", 24,
+        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD 移动：换方向走 1 格 = 1 次行动，同向连走免费　·　1-6 选技能 · ←→↑↓ 翻转 · 空格 释放（不扣行动）· Z 撤销 · R 重置 · Esc 退出", 24,
             TextAnchor.MiddleCenter, new Color(0.7f, 0.72f, 0.75f), font,
             new Vector2(1400f, 40f), new Vector2(0f, -430f));
 
@@ -647,9 +655,25 @@ public class PuzzleController : EventRoomBase
         {
             string who = string.IsNullOrEmpty(BoardSession.DollName) ? "" : BoardSession.DollName + "　·　";
             int left = moveLimit > 0 ? Mathf.Max(0, moveLimit - movesUsed) : -1;
-            coverageText.text = who
-                + (left >= 0 ? "行动 " + left + " / " + moveLimit + "　·　" : "")
-                + "点亮 " + lit + " / " + playable
+
+            if (actionText != null)
+            {
+                if (left >= 0)
+                {
+                    actionText.text = "行动 " + left + " / " + moveLimit;
+                    // 剩 2 次以内变黄，剩 0 变红：让人一眼知道快走不动了
+                    actionText.color = left <= 0 ? new Color(0.95f, 0.42f, 0.38f)
+                                     : left <= 2 ? new Color(0.96f, 0.80f, 0.42f)
+                                                 : Color.white;
+                }
+                else
+                {
+                    actionText.text = "行动 不限";
+                    actionText.color = new Color(0.72f, 0.76f, 0.82f);
+                }
+            }
+
+            coverageText.text = who + "点亮 " + lit + " / " + playable
                 + (moveLimit <= 0 ? "　·　" + percent + "%" : "");
         }
 
@@ -764,6 +788,13 @@ public class PuzzleController : EventRoomBase
         cursor = next;
         lastDir = dir;
         UpdateCursor();
+
+        if (cost > 0 && moveLimit > 0)
+            SetHint("换方向走 1 格 · 消耗 1 次行动（剩 " + Mathf.Max(0, moveLimit - movesUsed) + " / " + moveLimit + "）");
+        else if (cost > 0)
+            SetHint("换方向走 1 格 · 消耗 1 次行动");
+        else
+            SetHint("同向连走 · 不消耗行动");
     }
 
     void CastSelected()

@@ -35,7 +35,9 @@ public static class BoardPreview
     static void Board(PuzzleController c, Font font, Transform root)
     {
         Panel(root, "背景", new Vector2(4000f, 3000f), Vector2.zero, c.frameColor);
-        Label(root, "覆盖率", "覆盖 0 / " + (c.width * c.height) + " · 0%", 30, font, c.accentColor, new Vector2(1200f, 44f), new Vector2(0f, 470f));
+        string actionLine = c.MoveLimit > 0 ? "行动 " + c.MoveLimit + " / " + c.MoveLimit : "行动 不限";
+        Label(root, "行动", actionLine, 34, font, Color.white, new Vector2(1200f, 46f), new Vector2(0f, 470f));
+        Label(root, "覆盖率", "点亮 0 / " + (c.width * c.height) + " · 0%", 26, font, c.accentColor, new Vector2(1200f, 44f), new Vector2(0f, 420f));
 
         float step = c.cellSize + c.gap;
         var grid = new GameObject("格子系统", typeof(RectTransform));
@@ -77,7 +79,7 @@ public static class BoardPreview
 
         Panel(root, "重置", new Vector2(170f, 56f), new Vector2(820f, -350f), new Color(0.22f, 0.25f, 0.31f, 1f));
         Label(root, "重置字", "重置 (R)", 26, font, c.textColor, new Vector2(170f, 56f), new Vector2(820f, -350f));
-        Label(root, "提示", "WASD / 方向键 走路 · 空格 放技能 · 1/2/3 换技能 · R 重置 · Esc 退出", 24, font,
+        Label(root, "提示", "WASD 移动：换方向走 1 格 = 1 次行动，同向连走免费　·　1-6 选技能 · ←→↑↓ 翻转 · 空格 释放 · Z 撤销 · Esc 退出", 24, font,
             new Color(0.7f, 0.72f, 0.75f), new Vector2(1400f, 40f), new Vector2(0f, -430f));
     }
 
