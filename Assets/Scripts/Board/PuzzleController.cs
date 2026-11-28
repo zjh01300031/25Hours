@@ -175,9 +175,9 @@ public class PuzzleController : EventRoomBase
 
     void FitCellsToScreen()
     {
-        // 棋盘要落在标题（y=412）和技能条（y=-350）之间：可用区域 1660 × 650
+        // 棋盘落在覆盖率（y≈448）和技能条（y=-350）之间：可用区域 1660 × 640
         const float usableW = 1660f;
-        const float usableH = 650f;
+        const float usableH = 640f;
 
         // 总尺寸 = n*cell + (n-1)*gap，且 gap = 0.09*cell  →  cell = avail / (n + 0.09*(n-1))
         float cw = usableW / (width + 0.09f * Mathf.Max(0, width - 1));
@@ -194,14 +194,9 @@ public class PuzzleController : EventRoomBase
         var canvas = RuntimeUI.CreateCanvas("棋盘UI", 50);
         RuntimeUI.Panel(canvas.transform, "背景", new Vector2(4000f, 3000f), Vector2.zero, frameColor);
 
-        string titleText = string.IsNullOrEmpty(BoardSession.DollName)
-            ? "事件一 · 内层棋盘（白盒）"
-            : "事件一 · " + BoardSession.DollName + " 的内层棋盘";
-        RuntimeUI.Label(canvas.transform, "标题", titleText, 42,
-            TextAnchor.MiddleCenter, textColor, font, new Vector2(1200f, 60f), new Vector2(0f, 470f));
-
+        // 不再画顶部大字标题（人偶名放在覆盖率那一行里）
         coverageText = RuntimeUI.Label(canvas.transform, "覆盖率", "", 30,
-            TextAnchor.MiddleCenter, accentColor, font, new Vector2(1000f, 44f), new Vector2(0f, 412f));
+            TextAnchor.MiddleCenter, accentColor, font, new Vector2(1200f, 44f), new Vector2(0f, 470f));
 
         // 棋盘
         var boardRoot = new GameObject("棋盘", typeof(RectTransform));
@@ -209,7 +204,7 @@ public class PuzzleController : EventRoomBase
         var boardRect = boardRoot.GetComponent<RectTransform>();
         boardRect.anchorMin = boardRect.anchorMax = new Vector2(0.5f, 0.5f);
         boardRect.pivot = new Vector2(0.5f, 0.5f);
-        boardRect.anchoredPosition = new Vector2(0f, 12f);
+        boardRect.anchoredPosition = new Vector2(0f, 60f);
         boardRect.sizeDelta = new Vector2(width * cellSize + (width - 1) * gap,
                                           height * cellSize + (height - 1) * gap);
 
@@ -535,9 +530,12 @@ public class PuzzleController : EventRoomBase
         int playable = board.PlayableCount;
         int percent = Mathf.RoundToInt(board.Coverage * 100f);
         if (coverageText != null)
-            coverageText.text = "覆盖 " + lit + " / " + playable + " · " + percent + "%"
+        {
+            string who = string.IsNullOrEmpty(BoardSession.DollName) ? "" : BoardSession.DollName + "　·　";
+            coverageText.text = who + "覆盖 " + lit + " / " + playable + " · " + percent + "%"
             + (moveLimit > 0 ? "　·　已用 " + movesUsed + " / " + moveLimit + " 步" : "")
             + (clearThreshold < 0.999f ? "　·　点亮 " + Mathf.RoundToInt(clearThreshold * 100f) + "% 即可通关" : "");
+        }
 
         CoverageChanged?.Invoke(board.Coverage, lit, playable);
     }

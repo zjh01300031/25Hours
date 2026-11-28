@@ -35,8 +35,7 @@ public static class BoardPreview
     static void Board(PuzzleController c, Font font, Transform root)
     {
         Panel(root, "背景", new Vector2(4000f, 3000f), Vector2.zero, c.frameColor);
-        Label(root, "标题", "事件一 · 内层棋盘（白盒）", 42, font, c.textColor, new Vector2(1200f, 60f), new Vector2(0f, 470f));
-        Label(root, "覆盖率", "覆盖 0 / " + (c.width * c.height) + " · 0%", 30, font, c.accentColor, new Vector2(1000f, 44f), new Vector2(0f, 412f));
+        Label(root, "覆盖率", "覆盖 0 / " + (c.width * c.height) + " · 0%", 30, font, c.accentColor, new Vector2(1200f, 44f), new Vector2(0f, 470f));
 
         float step = c.cellSize + c.gap;
         var grid = new GameObject("格子系统", typeof(RectTransform));
@@ -45,7 +44,7 @@ public static class BoardPreview
         gr.anchorMin = gr.anchorMax = new Vector2(0.5f, 0.5f);
         gr.pivot = new Vector2(0.5f, 0.5f);
         gr.sizeDelta = new Vector2(c.width * step, c.height * step);
-        gr.anchoredPosition = Vector2.zero;
+        gr.anchoredPosition = new Vector2(0f, 60f);
 
         for (int y = 0; y < c.height; y++)
         {
