@@ -52,6 +52,20 @@ public class BoardGate : MonoBehaviour
 
     public static bool IsOpen { get; private set; }
 
+    /// <summary>这块棋盘对应的事件 id（Board_01 → board_01）；留空自动推。</summary>
+    public string ClearedEventId
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(clearedEventId)) return clearedEventId;
+            if (string.IsNullOrEmpty(boardScene)) return "";
+            var name = boardScene.Replace("Board_", "board_");
+            return name.ToLowerInvariant();
+        }
+    }
+
+    public string clearedEventId;
+
     bool open;
     bool armed = true;
     int cursor;
@@ -104,7 +118,8 @@ public class BoardGate : MonoBehaviour
         if (!open)
         {
             bool near = dist <= triggerRadius;
-            SetPrompt(near ? "空格  与「" + gateTitle + "」交互" : null);
+            bool done = IsCleared();
+            SetPrompt(near ? (done ? "空格  再次进入「" + gateTitle + "」" : "空格  与「" + gateTitle + "」交互") : null);
 
             if (near && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.E)))
             {
@@ -150,6 +165,16 @@ public class BoardGate : MonoBehaviour
     void Open()
     {
         if (InputGate.Blocked || BoardIntroUI.IsPlaying) return;
+
+        // 已经通关过的棋盘：不用再投人偶，直接再进一次
+        if (IsCleared() && !string.IsNullOrEmpty(boardScene))
+        {
+            BoardSession.SetReturn(ReturnMark());
+            BoardSession.Set(requiredItemId, requiredItemName, DollSprite());
+            PlayIntroThenGo();
+            return;
+        }
+
         open = true;
         armed = false;
         IsOpen = true;
@@ -272,6 +297,20 @@ public class BoardGate : MonoBehaviour
     }
 
     /// <summary>这件物品能不能投进这块棋盘：调试人偶永远可以，其它必须和 requiredItemId 完全一致。</summary>
+    bool IsCleared()
+    {
+        var id = ClearedEventId;
+        return !string.IsNullOrEmpty(id) && GameProgress.Ensure().IsEventCleared(id);
+    }
+
+    Sprite DollSprite()
+    {
+        if (dollArts != null)
+            for (int i = 0; i < dollArts.Length; i++)
+                if (dollArts[i] != null && dollArts[i].itemId == requiredItemId) return dollArts[i].sprite;
+        return null;
+    }
+
     bool Match(string itemId)
     {
         if (itemId == DebugKey) return true;
