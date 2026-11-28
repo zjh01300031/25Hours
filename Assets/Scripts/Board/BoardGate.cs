@@ -88,6 +88,9 @@ public class BoardGate : MonoBehaviour
 
     void Update()
     {
+        // 演出 / 过场期间，空格不能再和入口交互
+        if (InputGate.Blocked || BoardIntroUI.IsPlaying) return;
+
         if (actor == null)
         {
             player = FindObjectOfType<ShelterPlayer>();
@@ -146,6 +149,7 @@ public class BoardGate : MonoBehaviour
 
     void Open()
     {
+        if (InputGate.Blocked || BoardIntroUI.IsPlaying) return;
         open = true;
         armed = false;
         IsOpen = true;

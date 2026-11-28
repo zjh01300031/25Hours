@@ -64,6 +64,7 @@ public class ShelterDialogue : MonoBehaviour
 
     void Update()
     {
+        if (InputGate.Blocked) return;
         if (!IsOpen) return;
         if (Time.frameCount == openedFrame) return;
 

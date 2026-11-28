@@ -1954,7 +1954,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8077978990067627618, guid: ace1305df3954c94096925f532a37906, type: 3}
       propertyPath: itemId
-      value: item_02
+      value: item_doll_2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2012,6 +2012,10 @@ PrefabInstance:
     - target: {fileID: 3457614632051557766, guid: ace1305df3954c94096925f532a37906, type: 3}
       propertyPath: m_Name
       value: "\u6536\u96C6\u7269"
+      objectReference: {fileID: 0}
+    - target: {fileID: 8077978990067627618, guid: ace1305df3954c94096925f532a37906, type: 3}
+      propertyPath: itemId
+      value: item_doll_1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2368,9 +2372,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b92d94a5f3fad5c4abcd52a234b62860, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  boards: []
   font: {fileID: 12800000, guid: 367ad0adafc1591488c121c9838778e3, type: 3}
   toggleKey: 113
-  uses: []
 --- !u!4 &1360241599
 Transform:
   m_ObjectHideFlags: 0
@@ -3059,7 +3063,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8077978990067627618, guid: ace1305df3954c94096925f532a37906, type: 3}
       propertyPath: itemId
-      value: item_03
+      value: item_doll_3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3303,6 +3307,7 @@ MonoBehaviour:
   useBounds: 1
   min: {x: -22, y: -8.5}
   max: {x: 16, y: 4}
+  limitWithinRange: 0
 --- !u!81 &1796360649
 AudioListener:
   m_ObjectHideFlags: 0
@@ -3660,7 +3665,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8077978990067627618, guid: ace1305df3954c94096925f532a37906, type: 3}
       propertyPath: itemId
-      value: item_05
+      value: item_doll_5
       objectReference: {fileID: 0}
     - target: {fileID: 8077978990067627618, guid: ace1305df3954c94096925f532a37906, type: 3}
       propertyPath: requiresEventId
@@ -3725,7 +3730,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8077978990067627618, guid: ace1305df3954c94096925f532a37906, type: 3}
       propertyPath: itemId
-      value: item_04
+      value: item_doll_4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

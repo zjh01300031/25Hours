@@ -15,6 +15,7 @@ public class ShelterInteractor : MonoBehaviour
 
     void Update()
     {
+        if (InputGate.Blocked) return;
         if (ShelterHUD.Instance == null) return;
 
         var found = FindNearest();
