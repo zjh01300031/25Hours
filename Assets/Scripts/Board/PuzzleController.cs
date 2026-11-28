@@ -37,6 +37,12 @@ public class PuzzleController : EventRoomBase
     [Header("技能（留空就用默认三件）")]
     public PuzzleSkill[] skills;
 
+    [Header("小人（WASD 走动，空格放技能）")]
+    [Tooltip("留空就用内置白方块。想换成立绘就拖 Assets/Art/Characters/player.png 进来")]
+    public Sprite avatarSprite;
+    [Tooltip("走动时每格间隔（秒）")]
+    public float moveRepeat = 0.14f;
+
     [Header("外观")]
     public Font font;
     public float cellSize = 112f;
@@ -83,6 +89,10 @@ public class PuzzleController : EventRoomBase
     int selectedSkill = -1;
     bool finished;
 
+    Image avatarImage;
+    Vector2Int cursor;
+    float nextMove;
+
     /// <summary>不画那个橙色占位方块（棋盘自己就是可见的）。</summary>
     protected override void Awake() { }
 
@@ -91,7 +101,9 @@ public class PuzzleController : EventRoomBase
         base.Start();
         BuildBoard();
         BuildUI();
+        if (selectedSkill < 0 && skills.Length > 0) selectedSkill = 0;
         Refresh();
+        UpdateCursor();
     }
 
     void BuildBoard()
@@ -176,6 +188,16 @@ public class PuzzleController : EventRoomBase
             }
         }
 
+        // 小人
+        cursor = new Vector2Int(width / 2, height / 2);
+        var avatar = RuntimeUI.Panel(boardRoot.transform, "小人",
+            new Vector2(cellSize * 0.5f, cellSize * 0.72f), CellPosition(cursor.x, cursor.y), Color.white);
+        avatarImage = avatar.GetComponent<Image>();
+        avatarImage.sprite = avatarSprite != null ? avatarSprite : Marker.White;
+        avatarImage.type = Image.Type.Simple;
+        avatarImage.color = new Color(0.9f, 0.33f, 0.28f, 1f);
+        avatarImage.raycastTarget = false;
+
         // 技能按钮
         float totalWidth = skills.Length * 230f + (skills.Length - 1) * 16f;
         for (int i = 0; i < skills.Length; i++)
@@ -211,7 +233,7 @@ public class PuzzleController : EventRoomBase
         RuntimeUI.Label(reset, "字", "重置 (R)", 26, TextAnchor.MiddleCenter, textColor, font,
             new Vector2(170f, 56f), Vector2.zero);
 
-        hintText = RuntimeUI.Label(canvas.transform, "提示", "先点技能，再点格子 · R 重置 · Esc 退出", 24,
+        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD / 方向键 走路 · 空格 放技能 · 1/2/3 换技能 · R 重置 · Esc 退出", 24,
             TextAnchor.MiddleCenter, new Color(0.7f, 0.72f, 0.75f), font,
             new Vector2(1400f, 40f), new Vector2(0f, -430f));
 
@@ -278,6 +300,8 @@ public class PuzzleController : EventRoomBase
     void OnCellClicked(int x, int y)
     {
         if (finished) return;
+        cursor = new Vector2Int(x, y);
+        UpdateCursor();
         if (board.IsBlocked(x, y))
         {
             SetHint("这格是哑格，不能点");
@@ -399,6 +423,31 @@ public class PuzzleController : EventRoomBase
         CoverageChanged?.Invoke(board.Coverage, lit, playable);
     }
 
+    void UpdateCursor()
+    {
+        if (avatarImage != null)
+            avatarImage.rectTransform.anchoredPosition = CellPosition(cursor.x, cursor.y) + new Vector2(0f, cellSize * 0.3f);
+    }
+
+    void MoveCursor(int dx, int dy)
+    {
+        var next = cursor;
+        if (dx != 0) next = new Vector2Int(Mathf.Clamp(cursor.x + dx, 0, width - 1), cursor.y);
+        else if (dy != 0) next = new Vector2Int(cursor.x, Mathf.Clamp(cursor.y + dy, 0, height - 1));
+
+        if (next == cursor) return;
+        if (board.IsBlocked(next.x, next.y)) { SetHint("那边是哑格，走不过去"); return; }
+
+        cursor = next;
+        UpdateCursor();
+    }
+
+    void CastSelected()
+    {
+        if (selectedSkill < 0) { SetHint("先按 1/2/3 选一个技能"); return; }
+        OnCellClicked(cursor.x, cursor.y);
+    }
+
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -407,6 +456,29 @@ public class PuzzleController : EventRoomBase
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.R)) ResetPuzzle();
+        if (finished) return;
+
+        if (Input.GetKeyDown(KeyCode.R)) { ResetPuzzle(); return; }
+
+        for (int i = 0; i < skills.Length && i < 9; i++)
+            if (Input.GetKeyDown(KeyCode.Alpha1 + i)) SelectSkill(i);
+
+        float dx = 0f, dy = 0f;
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) dx -= 1f;
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) dx += 1f;
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) dy += 1f;
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) dy -= 1f;
+
+        if ((dx != 0f || dy != 0f) && Time.time >= nextMove)
+        {
+            MoveCursor(Mathf.RoundToInt(dx), Mathf.RoundToInt(dy));
+            nextMove = Time.time + (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D) ||
+                                    Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.S) ||
+                                    Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) ||
+                                    Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow)
+                                    ? 0.42f : moveRepeat);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space)) CastSelected();
     }
 }
