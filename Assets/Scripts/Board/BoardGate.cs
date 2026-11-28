@@ -189,8 +189,13 @@ public class BoardGate : MonoBehaviour
         // 没填文案时用占位页（正文就是「空」这个字），演出照样播
         var slides = (introSlides != null && introSlides.Length > 0) ? introSlides : PlaceholderSlides();
 
+        InputGate.Blocked = true;
         var ui = BoardIntroUI.Ensure();
-        ui.Play(slides, () => SceneFade.FadeTo(scene, 0.45f, 0.25f, 0.8f));
+        ui.Play(slides, () =>
+        {
+            InputGate.Release();
+            SceneFade.FadeTo(scene, 0.45f, 0.25f, 0.8f);
+        });
     }
 
     /// <summary>没填文案时的占位页：正文就写「空」，用来确认演出能播。</summary>

@@ -130,6 +130,7 @@ public class ShelterPlayer : MonoBehaviour
 
     void Update()
     {
+        if (InputGate.Blocked) { if (rb != null) rb.velocity = new Vector2(0f, rb.velocity.y); return; }
         if (transform.position.y < -30f)
         {
             transform.position = spawnPoint;
