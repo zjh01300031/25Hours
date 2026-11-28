@@ -28,8 +28,8 @@ public class RoomPortal : MonoBehaviour
     public float fadeIn = 1.0f;
 
     [Header("看起来的样子")]
-    public Color color = new Color(1f, 0.95f, 0.7f, 0.9f);
-    public Vector2 size = new Vector2(1.2f, 2.8f);
+    public Color color = new Color(1f, 0.82f, 0.30f, 1f);
+    public Vector2 size = new Vector2(2.4f, 3.4f);
 
     [Tooltip("第一次进这个房间时，屏幕中间提示一句（留空不提示）")]
     public string firstHint = "";
@@ -50,7 +50,7 @@ public class RoomPortal : MonoBehaviour
             sr.drawMode = SpriteDrawMode.Sliced;
             sr.size = size;
             sr.color = color;
-            sr.sortingOrder = 4;
+            sr.sortingOrder = 20;
         }
 
         look = GetComponent<SpriteRenderer>();
@@ -70,7 +70,7 @@ public class RoomPortal : MonoBehaviour
         var col = GetComponent<CircleCollider2D>();
         if (col == null) col = gameObject.AddComponent<CircleCollider2D>();
         col.isTrigger = true;
-        col.radius = 1.2f;
+        col.radius = 1.8f;
         col.offset = new Vector2(0f, 0.6f);
 
         var door = GetComponent<RoomDoor>();
@@ -100,7 +100,7 @@ public class RoomPortal : MonoBehaviour
         if (look != null)
         {
             var c = color;
-            c.a = color.a * (0.7f + 0.3f * Mathf.Sin(Time.time * 2.2f));
+            c.a = color.a * (0.62f + 0.38f * Mathf.Sin(Time.time * 2.6f));
             look.color = c;
         }
 
