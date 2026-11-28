@@ -44,7 +44,7 @@ public class TopDownPlayer : MonoBehaviour
 
     void Update()
     {
-        input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        input = ReadInput();
         if (input.sqrMagnitude > 1f) input.Normalize();
 
         if (Mathf.Abs(input.x) > 0.01f) facing = input.x > 0f ? 1f : -1f;
