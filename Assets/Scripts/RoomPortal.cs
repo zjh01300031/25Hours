@@ -13,7 +13,7 @@ public class RoomPortal : MonoBehaviour
     public string spawnObjectName = "入口_一层";
 
     [Header("触发")]
-    public float triggerRadius = 1.2f;
+    public float triggerRadius = 2.2f;
     public bool needFacingRight = false;
 
     [Header("转场时间（秒）")]
