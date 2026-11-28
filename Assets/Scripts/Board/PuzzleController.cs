@@ -15,13 +15,17 @@ using UnityEngine.UI;
 /// </summary>
 public class PuzzleController : EventRoomBase
 {
-    [Header("棋盘")]
+    [Header("关卡数据（可选）")]
+    [Tooltip("策划给的 JSON（Assets/Resources/Board/*.json）。填了就以它为准，覆盖下面的宽/高/哑格/技能。")]
+    public TextAsset layoutJson;
+
+    [Header("棋盘（没填 JSON 时用这里的值）")]
     [Tooltip("宽（格）")]
     public int width = 5;
     [Tooltip("高（格）")]
     public int height = 5;
     [Tooltip("哑格，格式 x,y（左下角是 0,0）")]
-    public string[] blockedCells = { "2,2" };
+    public string[] blockedCells = new string[0];
 
     [Tooltip("勾上：技能会把格子翻转（亮↔暗），能拿来做唯一解的关卡；不勾：只点亮，白盒默认，保证打得通。")]
     public bool toggleCells = false;
@@ -75,6 +79,7 @@ public class PuzzleController : EventRoomBase
     Text hintText;
     Text winText;
     int[] initialCharges;
+    string[] pendingLit;
     int selectedSkill = -1;
     bool finished;
 
@@ -91,6 +96,8 @@ public class PuzzleController : EventRoomBase
 
     void BuildBoard()
     {
+        ApplyLayoutIfAny();
+
         if (skills == null || skills.Length == 0)
         {
             skills = new[]
@@ -106,6 +113,20 @@ public class PuzzleController : EventRoomBase
 
         board = new PuzzleBoard(width, height);
         board.SetBlockedCells(blockedCells);
+
+        if (pendingLit != null)
+        {
+            foreach (var raw in pendingLit)
+            {
+                if (string.IsNullOrEmpty(raw)) continue;
+                var parts = raw.Split(',');
+                if (parts.Length != 2) continue;
+                int x, y;
+                if (int.TryParse(parts[0].Trim(), out x) && int.TryParse(parts[1].Trim(), out y))
+                    board.SetLit(x, y, true);
+            }
+            pendingLit = null;
+        }
     }
 
     // ---------------- 界面 ----------------
@@ -197,6 +218,39 @@ public class PuzzleController : EventRoomBase
         winText = RuntimeUI.Label(canvas.transform, "通关", "", 46, TextAnchor.MiddleCenter,
             accentColor, font, new Vector2(1200f, 70f), new Vector2(0f, 210f));
         winText.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 有 JSON 就以 JSON 为准：大小、哑格、技能、初始亮格、翻转开关、通关阈值。
+    /// 没有 JSON 就用 Inspector 上的值。
+    /// </summary>
+    void ApplyLayoutIfAny()
+    {
+        var layout = PuzzleLayoutLoader.Load(layoutJson);
+        if (layout == null) return;
+
+        if (layout.width > 0) width = layout.width;
+        if (layout.height > 0) height = layout.height;
+
+        if (layout.blockedCells != null) blockedCells = layout.blockedCells;
+
+        toggleCells = layout.toggleCells;
+        if (layout.clearThreshold > 0f) clearThreshold = layout.clearThreshold;
+
+        if (layout.skills != null && layout.skills.Count > 0)
+        {
+            var list = new List<PuzzleSkill>();
+            foreach (var s in layout.skills)
+            {
+                list.Add(new PuzzleSkill(s.name, PuzzleLayoutLoader.ParseShape(s.shape), s.charges));
+            }
+            skills = list.ToArray();
+        }
+
+        pendingLit = layout.litCells;
+
+        Debug.Log("[棋盘] 已按 JSON 加载：" + layoutJson.name + "（" + width + "×" + height + "，" +
+                  (skills == null ? 0 : skills.Length) + " 个技能）");
     }
 
     Vector2 CellPosition(int x, int y)

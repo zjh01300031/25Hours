@@ -1,0 +1,13 @@
+{
+  "width": 5,
+  "height": 5,
+  "blockedCells": ["2,2"],
+  "toggleCells": false,
+  "clearThreshold": 1.0,
+  "skills": [
+    { "name": "微光", "shape": "Single",  "charges": 6 },
+    { "name": "回响", "shape": "Cross",   "charges": 4 },
+    { "name": "共振", "shape": "Square3", "charges": 2 }
+  ],
+  "litCells": []
+}

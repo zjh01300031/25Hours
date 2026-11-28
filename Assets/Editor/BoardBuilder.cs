@@ -34,7 +34,7 @@ public static class BoardBuilder
         var board = boardGo.AddComponent<PuzzleController>();
         board.width = 5;
         board.height = 5;
-        board.blockedCells = new[] { "2,2" };
+        board.blockedCells = new string[0];   // 设计稿出来后再填，或改用 layoutJson
         board.skills = new[]
         {
             new PuzzleSkill("微光", PuzzleShape.Single, 6),
