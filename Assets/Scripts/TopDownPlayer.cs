@@ -49,6 +49,8 @@ public class TopDownPlayer : MonoBehaviour
 
         if (Mathf.Abs(input.x) > 0.01f) facing = input.x > 0f ? 1f : -1f;
 
+        UpdateDiag();
+
         if (spriteRenderer != null && bob)
         {
             if (input.sqrMagnitude > 0.01f)
@@ -70,6 +72,31 @@ public class TopDownPlayer : MonoBehaviour
 
     void FixedUpdate()
     {
-        rb.MovePosition(rb.position + input * speed * Time.fixedDeltaTime);
+        rb.velocity = input * speed;
+    }
+
+    // ------- 排查用：每秒把状态写进 D:\Unity2D\Build\topdown_debug.txt -------
+    float diagTimer;
+    static bool diagFailed;
+
+    void UpdateDiag()
+    {
+        if (diagFailed) return;
+        diagTimer += Time.unscaledDeltaTime;
+        if (diagTimer < 1f) return;
+        diagTimer = 0f;
+
+        try
+        {
+            string path = "D:/Unity2D/Build/topdown_debug.txt";
+            System.IO.Directory.CreateDirectory("D:/Unity2D/Build");
+            string line = string.Format(
+                "{0:HH:mm:ss}  pos=({1:0.00},{2:0.00})  input=({3:0},{4:0})  vel=({5:0.00},{6:0.00})  speed={7}  body={8}  simulated={9}  enabled={10}  ts={11:0.00}  focused={12}\n",
+                System.DateTime.Now, transform.position.x, transform.position.y,
+                input.x, input.y, rb.velocity.x, rb.velocity.y, speed,
+                rb.bodyType, rb.simulated, enabled, Time.timeScale, Application.isFocused);
+            System.IO.File.AppendAllText(path, line);
+        }
+        catch { diagFailed = true; }
     }
 }

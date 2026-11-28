@@ -122,8 +122,9 @@ public static class ExploreBuilder
         Wall("墙_上", new Vector2(0f, 7f), new Vector2(23f, 0.5f));
         Wall("墙_下", new Vector2(0f, -5f), new Vector2(23f, 0.5f));
 
-        // 玩家：站在地板上（地板顶面 y = -3）
-        var player = new GameObject("玩家_俯视", typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(TopDownPlayer));
+        // 玩家：站在地板上（地板顶面 y = -3）；立绘放在子物体「图」上，
+        // 根物体只负责物理（否则走路上下晃会每帧把根位置写回去，人就动不了了）
+        var player = new GameObject("玩家_俯视", typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(TopDownPlayer));
         player.transform.position = new Vector3(0f, -2.68f, 0f);
         var rb = player.GetComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
@@ -131,7 +132,11 @@ public static class ExploreBuilder
         var col = player.GetComponent<CircleCollider2D>();
         col.radius = 0.32f;
 
-        var sr = player.GetComponent<SpriteRenderer>();
+        var art = new GameObject("图", typeof(SpriteRenderer));
+        art.transform.SetParent(player.transform, false);
+        art.transform.localPosition = Vector3.zero;
+
+        var sr = art.GetComponent<SpriteRenderer>();
         sr.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(PlayerArt);
         sr.sortingOrder = 5;
         if (sr.sprite == null) sr.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
