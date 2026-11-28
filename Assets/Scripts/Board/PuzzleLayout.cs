@@ -35,6 +35,11 @@ public class PuzzleLayout
     public List<PuzzleSkillData> skills = new List<PuzzleSkillData>();
     public string[] litCells;
 
+    // 设计稿里的三种特殊格（分开存，显示/规则都用得到）
+    public string[] voidCells;       // 形状外（棋盘镂空），不显示、不能走、不可覆盖
+    public string[] obstacleCells;   // 障碍（黑格），同上
+    public string[] mirrorCells;     // 镜像格（红格）：覆盖到它时整块技能 180° 再出现一次
+
     // 设计稿里的起始位置（0 起算）与放技能次数上限；0 或负数 = 不限
     public int startX = -1;
     public int startY = -1;

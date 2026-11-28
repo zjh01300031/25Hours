@@ -93,10 +93,17 @@ public class PuzzleController : EventRoomBase
     bool finished;
 
     int startX = -1, startY = -1;   // 设计稿给的起始格；<0 表示用默认
-    int moveLimit;                  // 设计稿给的放技能次数上限；0 = 不限
+    int moveLimit;
+    string[] mirrorCells;                  // 设计稿给的放技能次数上限；0 = 不限
     int movesUsed;
-    bool flipX;   // Z 键：左右镜像
-    bool flipY;   // X 键：上下镜像
+    bool flipX;   // 左右翻转技能形状（← →）
+    bool flipY;   // 上下翻转技能形状（↑ ↓）
+    Vector2Int lastDir;                          // 上一次移动方向，用来判「同向连走不花行动」
+    readonly List<bool[]> historyLit = new List<bool[]>();
+    readonly List<int[]> historyCharges = new List<int[]>();
+    readonly List<Vector2Int> historyPos = new List<Vector2Int>();
+    readonly List<int> historyUsed = new List<int>();
+    readonly List<Vector2Int> historyDir = new List<Vector2Int>();
 
     [Tooltip("白盒阶段：按 Tab 直接把所有可用格点亮并通关，方便连着看下一块棋盘。上线前关掉")]
     public bool allowDebugClear = true;
@@ -155,6 +162,7 @@ public class PuzzleController : EventRoomBase
 
         board = new PuzzleBoard(width, height);
         board.SetBlockedCells(blockedCells);
+        board.SetMirrorCells(mirrorCells);
 
         if (pendingLit != null)
         {
@@ -276,7 +284,7 @@ public class PuzzleController : EventRoomBase
         RuntimeUI.Label(reset, "字", "重置 (R)", 26, TextAnchor.MiddleCenter, textColor, font,
             new Vector2(170f, 56f), Vector2.zero);
 
-        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD / 方向键 走路 · 空格 放技能 · 1/2/3 换技能 · Z/X 镜像 · R 重置 · Esc 退出", 24,
+        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD 移动（同向连走只算 1 次行动）· 1-6 选技能 · ←→↑↓ 翻转 · 空格 释放 · Z 撤销 · R 重置 · Esc 退出", 24,
             TextAnchor.MiddleCenter, new Color(0.7f, 0.72f, 0.75f), font,
             new Vector2(1400f, 40f), new Vector2(0f, -430f));
 
@@ -314,6 +322,9 @@ public class PuzzleController : EventRoomBase
 
         if (layout.startX >= 0) { startX = layout.startX; startY = layout.startY; }
         moveLimit = layout.moveLimit;
+
+        // 镜像格先存起来，board 建好后再塞进去（ApplyLayoutIfAny 早于 board 创建）
+        mirrorCells = layout.mirrorCells;
         pendingLit = layout.litCells;
 
         Debug.Log("[棋盘] 已按 JSON 加载：" + layoutJson.name + "（" + width + "×" + height + "，" +
@@ -366,67 +377,167 @@ public class PuzzleController : EventRoomBase
 
     void OnCellClicked(int x, int y)
     {
-        if (finished) return;
         cursor = new Vector2Int(x, y);
-        UpdateCursor();
-        if (board.IsBlocked(x, y))
-        {
-            SetHint("这格是哑格，不能点");
-            return;
-        }
+        SnapCursor();
+        CastAt(x, y);
+    }
 
-        if (selectedSkill < 0)
-        {
-            SetHint("先在下面选一个技能");
-            return;
-        }
+    /// <summary>照设计稿：锚点=小人所在格；形状按 ←→↑↓ 翻转；覆盖到镜像格时整块 180° 再出现一次。</summary>
+    void CastAt(int x, int y)
+    {
+        if (finished) return;
+        if (!board.InBounds(x, y) || board.IsBlocked(x, y)) { SetHint("这一格用不了"); return; }
+        if (selectedSkill < 0) { SetHint("先按 1-6 选一个技能"); return; }
 
         var skill = skills[selectedSkill];
-        if (skill.charges <= 0)
-        {
-            SetHint("「" + skill.name + "」已经用完了");
-            return;
-        }
+        if (skill.charges <= 0) { SetHint("「" + skill.name + "」已经用完了"); return; }
 
+        var offsets = FlippedOffsets(skill.shape);
+        var cells = board.Expand(offsets, new Vector2Int(x, y));
+        if (cells.Count == 0) { SetHint("这个位置覆盖不到棋盘内"); return; }
+
+        PushHistory();
         int skillIndex = selectedSkill;
-        var affected = new List<Vector2Int>(PuzzleSkill.Offsets(skill.shape));
-        int changed = board.Apply(skill.shape, new Vector2Int(x, y), toggleCells);
-        if (changed <= 0)
+        skill.charges--;
+
+        int added = 0;
+        for (int i = 0; i < cells.Count; i++)
         {
-            SetHint("这一下没碰到任何格子");
-            return;
+            var c = cells[i];
+            if (!board.IsLit(c.x, c.y))
+            {
+                board.SetLit(c.x, c.y, true);
+                added++;
+            }
         }
 
-        skill.charges--;
+        lastDir = Vector2Int.zero;   // 施法会打断连续移动
         if (skill.charges <= 0) selectedSkill = -1;
 
         Refresh();
         SkillUsed?.Invoke(skillIndex, skill.name, skill.charges);
 
-        // 施法反馈：被点到的格子一个个闪，小人弹一下
-        for (int i = 0; i < affected.Count; i++)
+        for (int i = 0; i < cells.Count; i++)
         {
-            int ax = x + affected[i].x;
-            int ay = y + affected[i].y;
-            if (ax < 0 || ax >= width || ay < 0 || ay >= height) continue;
-            if (board.IsBlocked(ax, ay)) continue;
-            float delay = Mathf.Abs(affected[i].x) + Mathf.Abs(affected[i].y);
-            PulseCell(ax, ay, delay * 0.022f);
+            var c = cells[i];
+            float delay = Mathf.Abs(c.x - x) + Mathf.Abs(c.y - y);
+            PulseCell(c.x, c.y, delay * 0.022f);
         }
         PulseAvatar();
 
-        if (!finished && board.Coverage >= clearThreshold - 0.0001f)
+        if (added == 0) SetHint("无效覆盖：" + cells.Count + " 格已经全亮了");
+        else SetHint("");
+
+        if (!finished && board.LitCount >= board.PlayableCount)
         {
             finished = true;
             StartCoroutine(WinRoutine());
         }
     }
 
-    string Mirrors()
+    List<Vector2Int> FlippedOffsets(PuzzleShape shape)
     {
-        if (!flipX && !flipY) return "无（Z 左右 / X 上下）";
-        if (flipX && flipY) return "左右 + 上下";
-        return flipX ? "左右" : "上下";
+        var offsets = PuzzleSkill.Offsets(shape);
+        var list = new List<Vector2Int>(offsets.Length);
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            int ox = flipX ? -offsets[i].x : offsets[i].x;
+            int oy = flipY ? -offsets[i].y : offsets[i].y;
+            list.Add(new Vector2Int(ox, oy));
+        }
+        return list;
+    }
+
+    static string ShapeSignature(PuzzleShape shape, bool fx, bool fy)
+    {
+        var offsets = PuzzleSkill.Offsets(shape);
+        var keys = new List<string>(offsets.Length);
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            int ox = fx ? -offsets[i].x : offsets[i].x;
+            int oy = fy ? -offsets[i].y : offsets[i].y;
+            keys.Add(ox + "," + oy);
+        }
+        keys.Sort(System.StringComparer.Ordinal);
+        return string.Join("|", keys.ToArray());
+    }
+
+    void FlipHorizontal()
+    {
+        if (selectedSkill < 0) { SetHint("先选一个技能再翻转方向"); return; }
+        var shape = skills[selectedSkill].shape;
+        if (ShapeSignature(shape, !flipX, flipY) == ShapeSignature(shape, flipX, flipY))
+        {
+            SetHint("这个方向翻转不会改变技能形状");
+            return;
+        }
+        flipX = !flipX;
+        Refresh();
+        SetHint("技能方向：左右翻转" + (flipX ? "（已翻）" : "") + (flipY ? " · 上下翻转（已翻）" : ""));
+    }
+
+    void FlipVertical()
+    {
+        if (selectedSkill < 0) { SetHint("先选一个技能再翻转方向"); return; }
+        var shape = skills[selectedSkill].shape;
+        if (ShapeSignature(shape, flipX, !flipY) == ShapeSignature(shape, flipX, flipY))
+        {
+            SetHint("这个方向翻转不会改变技能形状");
+            return;
+        }
+        flipY = !flipY;
+        Refresh();
+        SetHint("技能方向：" + (flipX ? "左右翻转（已翻）· " : "") + "上下翻转" + (flipY ? "（已翻）" : ""));
+    }
+
+    void PushHistory()
+    {
+        var litSnap = new bool[width * height];
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                litSnap[y * width + x] = board.IsLit(x, y);
+
+        var chargesSnap = new int[skills.Length];
+        for (int i = 0; i < skills.Length; i++) chargesSnap[i] = skills[i].charges;
+
+        historyLit.Add(litSnap);
+        historyCharges.Add(chargesSnap);
+        historyPos.Add(cursor);
+        historyUsed.Add(movesUsed);
+        historyDir.Add(lastDir);
+
+        if (historyLit.Count > 64)
+        {
+            historyLit.RemoveAt(0); historyCharges.RemoveAt(0); historyPos.RemoveAt(0);
+            historyUsed.RemoveAt(0); historyDir.RemoveAt(0);
+        }
+    }
+
+    void Undo()
+    {
+        if (historyLit.Count == 0) { SetHint("没有可以撤销的了"); return; }
+
+        int last = historyLit.Count - 1;
+        var litSnap = historyLit[last];
+        var chargesSnap = historyCharges[last];
+
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                board.SetLit(x, y, litSnap[y * width + x]);
+
+        for (int i = 0; i < skills.Length && i < chargesSnap.Length; i++) skills[i].charges = chargesSnap[i];
+
+        cursor = historyPos[last];
+        movesUsed = historyUsed[last];
+        lastDir = historyDir[last];
+        finished = false;
+
+        historyLit.RemoveAt(last); historyCharges.RemoveAt(last); historyPos.RemoveAt(last);
+        historyUsed.RemoveAt(last); historyDir.RemoveAt(last);
+
+        SnapCursor();
+        Refresh();
+        SetHint("撤销了上一步");
     }
 
     void DebugClear()
@@ -479,6 +590,9 @@ public class PuzzleController : EventRoomBase
 
         selectedSkill = -1;
         movesUsed = 0;
+        lastDir = Vector2Int.zero;
+        historyLit.Clear(); historyCharges.Clear(); historyPos.Clear();
+        historyUsed.Clear(); historyDir.Clear();
         SetHint(restoreCharges ? "棋盘与技能次数都已重置" : "棋盘已清空（技能次数不返还）");
         Refresh();
     }
@@ -532,9 +646,11 @@ public class PuzzleController : EventRoomBase
         if (coverageText != null)
         {
             string who = string.IsNullOrEmpty(BoardSession.DollName) ? "" : BoardSession.DollName + "　·　";
-            coverageText.text = who + "覆盖 " + lit + " / " + playable + " · " + percent + "%"
-            + (moveLimit > 0 ? "　·　已用 " + movesUsed + " / " + moveLimit + " 步" : "")
-            + (clearThreshold < 0.999f ? "　·　点亮 " + Mathf.RoundToInt(clearThreshold * 100f) + "% 即可通关" : "");
+            int left = moveLimit > 0 ? Mathf.Max(0, moveLimit - movesUsed) : -1;
+            coverageText.text = who
+                + (left >= 0 ? "行动 " + left + " / " + moveLimit + "　·　" : "")
+                + "点亮 " + lit + " / " + playable
+                + (moveLimit <= 0 ? "　·　" + percent + "%" : "");
         }
 
         CoverageChanged?.Invoke(board.Coverage, lit, playable);
@@ -627,30 +743,33 @@ public class PuzzleController : EventRoomBase
 
     void MoveCursor(int dx, int dy)
     {
-        var next = cursor;
-        if (dx != 0) next = new Vector2Int(Mathf.Clamp(cursor.x + dx, 0, width - 1), cursor.y);
-        else if (dy != 0) next = new Vector2Int(cursor.x, Mathf.Clamp(cursor.y + dy, 0, height - 1));
+        if (finished) return;
 
-        if (next == cursor) return;
-        if (board.IsBlocked(next.x, next.y)) { SetHint("那边是哑格，走不过去"); return; }
+        var dir = new Vector2Int(dx, dy);
+        var next = new Vector2Int(Mathf.Clamp(cursor.x + dx, 0, width - 1),
+                                  Mathf.Clamp(cursor.y + dy, 0, height - 1));
 
+        if (next == cursor) { SetHint("走到棋盘外了"); return; }
+        if (board.IsBlocked(next.x, next.y)) { SetHint("这里是形状外 / 障碍格，走不过去"); return; }
+
+        int cost = (lastDir == dir) ? 0 : 1;   // 往同一个方向连着走不算新行动
+        if (moveLimit > 0 && movesUsed + cost > moveLimit)
+        {
+            SetHint("行动次数用尽（" + movesUsed + " / " + moveLimit + "）— 按 R 重置，或直接释放技能");
+            return;
+        }
+
+        PushHistory();
+        movesUsed += cost;
         cursor = next;
+        lastDir = dir;
         UpdateCursor();
     }
 
     void CastSelected()
     {
-        if (selectedSkill < 0) { SetHint("先按 1/2/3 选一个技能"); return; }
-        if (moveLimit > 0 && movesUsed >= moveLimit)
-        {
-            SetHint("步数用完了（" + movesUsed + " / " + moveLimit + "）· 按 R 重来");
-            return;
-        }
         if (finished) return;
-
-        int before = board.LitCount;
-        OnCellClicked(cursor.x, cursor.y);
-        if (board.LitCount != before) movesUsed++;
+        CastAt(cursor.x, cursor.y);
     }
 
     void Update()
@@ -665,17 +784,19 @@ public class PuzzleController : EventRoomBase
 
         if (Input.GetKeyDown(KeyCode.R)) { ResetPuzzle(); return; }
 
-        if (Input.GetKeyDown(KeyCode.Z))
+        if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow))
         {
-            flipX = !flipX;
-            SetHint("镜像：" + Mirrors());
+            FlipHorizontal();
+            return;
         }
 
-        if (Input.GetKeyDown(KeyCode.X))
+        if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow))
         {
-            flipY = !flipY;
-            SetHint("镜像：" + Mirrors());
+            FlipVertical();
+            return;
         }
+
+        if (Input.GetKeyDown(KeyCode.Z)) { Undo(); return; }
 
         if (allowDebugClear && Input.GetKeyDown(KeyCode.Tab))
         {
@@ -689,10 +810,10 @@ public class PuzzleController : EventRoomBase
         AnimateAvatar();
         if (castCooldown > 0f) castCooldown -= Time.deltaTime;
 
-        bool left = Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow);
-        bool right = Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow);
-        bool up = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow);
-        bool down = Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow);
+        bool left = Input.GetKey(KeyCode.A);
+        bool right = Input.GetKey(KeyCode.D);
+        bool up = Input.GetKey(KeyCode.W);
+        bool down = Input.GetKey(KeyCode.S);
 
         int dx = right ? 1 : (left ? -1 : 0);
         int dy = up ? 1 : (down ? -1 : 0);
@@ -700,9 +821,7 @@ public class PuzzleController : EventRoomBase
 
         bool pressedNow =
             Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D) ||
-            Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.S) ||
-            Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) ||
-            Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow);
+            Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.S);
 
         if ((dx != 0 || dy != 0) && (pressedNow || Time.time >= nextMove))
         {

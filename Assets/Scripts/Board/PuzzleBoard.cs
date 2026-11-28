@@ -14,6 +14,7 @@ public class PuzzleBoard
 
     readonly bool[] lit;
     readonly bool[] blocked;
+    readonly bool[] mirror;
 
     public PuzzleBoard(int width, int height)
     {
@@ -21,6 +22,7 @@ public class PuzzleBoard
         Height = Mathf.Max(1, height);
         lit = new bool[Width * Height];
         blocked = new bool[Width * Height];
+        mirror = new bool[Width * Height];
     }
 
     int Index(int x, int y) { return y * Width + x; }
@@ -53,6 +55,72 @@ public class PuzzleBoard
             if (!int.TryParse(parts[1].Trim(), out y)) continue;
             if (InBounds(x, y)) blocked[Index(x, y)] = true;
         }
+    }
+
+    public bool IsMirror(int x, int y)
+    {
+        return InBounds(x, y) && mirror[Index(x, y)];
+    }
+
+    static void ParseCells(string[] cells, int w, int h, System.Action<int, int> mark)
+    {
+        if (cells == null) return;
+        foreach (var raw in cells)
+        {
+            if (string.IsNullOrEmpty(raw)) continue;
+            var parts = raw.Split(',');
+            if (parts.Length != 2) continue;
+            int x, y;
+            if (!int.TryParse(parts[0].Trim(), out x)) continue;
+            if (!int.TryParse(parts[1].Trim(), out y)) continue;
+            if (x < 0 || x >= w || y < 0 || y >= h) continue;
+            mark(x, y);
+        }
+    }
+
+    /// <summary>镜像格：技能覆盖到它时，整块技能会以它为中心再出现一次（180° 点对称）。</summary>
+    public void SetMirrorCells(string[] cells)
+    {
+        for (int i = 0; i < mirror.Length; i++) mirror[i] = false;
+        ParseCells(cells, Width, Height, (x, y) => mirror[Index(x, y)] = true);
+    }
+
+    /// <summary>按设计稿规则展开一次施法：先取锚点周围的形状，再对覆盖到的镜像格做 180° 复制。</summary>
+    public List<Vector2Int> Expand(IList<Vector2Int> offsets, Vector2Int anchor)
+    {
+        var baseCells = new List<Vector2Int>();
+        var seen = new HashSet<Vector2Int>();
+
+        foreach (var offset in offsets)
+        {
+            int x = anchor.x + offset.x;
+            int y = anchor.y + offset.y;
+            if (!InBounds(x, y)) continue;
+            if (blocked[Index(x, y)]) continue;
+            var cell = new Vector2Int(x, y);
+            if (seen.Add(cell)) baseCells.Add(cell);
+        }
+
+        var result = new List<Vector2Int>(baseCells);
+
+        for (int i = 0; i < Width * Height; i++)
+        {
+            if (!mirror[i]) continue;
+            var m = new Vector2Int(i % Width, i / Width);
+            if (!baseCells.Contains(m)) continue;
+
+            foreach (var cell in baseCells)
+            {
+                int rx = 2 * m.x - cell.x;
+                int ry = 2 * m.y - cell.y;
+                if (!InBounds(rx, ry)) continue;
+                if (blocked[Index(rx, ry)]) continue;
+                var rc = new Vector2Int(rx, ry);
+                if (seen.Add(rc)) result.Add(rc);
+            }
+        }
+
+        return result;
     }
 
     public int PlayableCount

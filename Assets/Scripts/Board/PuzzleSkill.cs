@@ -53,10 +53,10 @@ public class PuzzleSkill
                     new Vector2Int(-1, 0), new Vector2Int(0, 0), new Vector2Int(1, 0),
                     new Vector2Int(-1, 1), new Vector2Int(0, 1), new Vector2Int(1, 1),
                 };
-            case PuzzleShape.Row3:
-                return new[] { new Vector2Int(-1, 0), new Vector2Int(0, 0), new Vector2Int(1, 0) };
-            case PuzzleShape.Col3:
-                return new[] { new Vector2Int(0, -1), new Vector2Int(0, 0), new Vector2Int(0, 1) };
+            case PuzzleShape.Row3:   // 设计稿 B：从锚点往右 3 格
+                return new[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0) };
+            case PuzzleShape.Col3:   // 设计稿 A：从锚点往上 3 格
+                return new[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2) };
             case PuzzleShape.Col2:
                 return new[] { new Vector2Int(0, 0), new Vector2Int(0, 1) };
             case PuzzleShape.Square2:
