@@ -262,7 +262,7 @@ public static class ExploreBuilder
 
     static void SetupBuildSettings()
     {
-        var order = new[] { "MainMenu", "Shelter_L0", "Event_01", "Board_01", "Board_02", "Board_03", "Board_04", "Board_05" };
+        var order = new[] { "MainMenu", "Shelter_L0", "Event_01", "Board_01", "Board_02", "Board_03", "Board_04", "Board_05", "Event_02" };
         var list = new List<EditorBuildSettingsScene>();
         foreach (var name in order)
         {
