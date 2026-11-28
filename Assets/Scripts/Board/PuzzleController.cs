@@ -95,6 +95,8 @@ public class PuzzleController : EventRoomBase
     int startX = -1, startY = -1;   // 设计稿给的起始格；<0 表示用默认
     int moveLimit;                  // 设计稿给的放技能次数上限；0 = 不限
     int movesUsed;
+    bool flipX;   // Z 键：左右镜像
+    bool flipY;   // X 键：上下镜像
 
     [Tooltip("白盒阶段：按 Tab 直接把所有可用格点亮并通关，方便连着看下一块棋盘。上线前关掉")]
     public bool allowDebugClear = true;
@@ -173,13 +175,16 @@ public class PuzzleController : EventRoomBase
 
     void FitCellsToScreen()
     {
-        // 让整块棋盘落在 1920×1080 的安全区里（上下给标题和技能条留位置）
-        float usableW = 1520f;
-        float usableH = 780f;
-        float byW = usableW / Mathf.Max(1, width);
-        float byH = usableH / Mathf.Max(1, height);
-        cellSize = Mathf.Clamp(Mathf.Min(byW, byH), 44f, 126f);
-        gap = Mathf.Round(cellSize * 0.09f);
+        // 棋盘要落在标题（y=412）和技能条（y=-350）之间：可用区域 1660 × 650
+        const float usableW = 1660f;
+        const float usableH = 650f;
+
+        // 总尺寸 = n*cell + (n-1)*gap，且 gap = 0.09*cell  →  cell = avail / (n + 0.09*(n-1))
+        float cw = usableW / (width + 0.09f * Mathf.Max(0, width - 1));
+        float ch = usableH / (height + 0.09f * Mathf.Max(0, height - 1));
+
+        cellSize = Mathf.Clamp(Mathf.Floor(Mathf.Min(cw, ch)), 34f, 120f);
+        gap = Mathf.Max(3f, Mathf.Round(cellSize * 0.09f));
     }
 
     void BuildUI()
@@ -204,8 +209,9 @@ public class PuzzleController : EventRoomBase
         var boardRect = boardRoot.GetComponent<RectTransform>();
         boardRect.anchorMin = boardRect.anchorMax = new Vector2(0.5f, 0.5f);
         boardRect.pivot = new Vector2(0.5f, 0.5f);
-        boardRect.anchoredPosition = new Vector2(0f, 0f);
-        boardRect.sizeDelta = new Vector2(width * (cellSize + gap), height * (cellSize + gap));
+        boardRect.anchoredPosition = new Vector2(0f, 12f);
+        boardRect.sizeDelta = new Vector2(width * cellSize + (width - 1) * gap,
+                                          height * cellSize + (height - 1) * gap);
 
         for (int y = 0; y < height; y++)
         {
@@ -275,7 +281,7 @@ public class PuzzleController : EventRoomBase
         RuntimeUI.Label(reset, "字", "重置 (R)", 26, TextAnchor.MiddleCenter, textColor, font,
             new Vector2(170f, 56f), Vector2.zero);
 
-        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD / 方向键 走路 · 空格 放技能 · 1/2/3 换技能 · R 重置 · Esc 退出　　Tab 直接完成（调试）", 24,
+        hintText = RuntimeUI.Label(canvas.transform, "提示", "WASD / 方向键 走路 · 空格 放技能 · 1/2/3 换技能 · Z/X 镜像 · R 重置 · Esc 退出", 24,
             TextAnchor.MiddleCenter, new Color(0.7f, 0.72f, 0.75f), font,
             new Vector2(1400f, 40f), new Vector2(0f, -430f));
 
@@ -421,6 +427,13 @@ public class PuzzleController : EventRoomBase
         }
     }
 
+    string Mirrors()
+    {
+        if (!flipX && !flipY) return "无（Z 左右 / X 上下）";
+        if (flipX && flipY) return "左右 + 上下";
+        return flipX ? "左右" : "上下";
+    }
+
     void DebugClear()
     {
         for (int y = 0; y < height; y++)
@@ -523,7 +536,8 @@ public class PuzzleController : EventRoomBase
         int percent = Mathf.RoundToInt(board.Coverage * 100f);
         if (coverageText != null)
             coverageText.text = "覆盖 " + lit + " / " + playable + " · " + percent + "%"
-            + (moveLimit > 0 ? "　·　已用 " + movesUsed + " / " + moveLimit + " 步" : "");
+            + (moveLimit > 0 ? "　·　已用 " + movesUsed + " / " + moveLimit + " 步" : "")
+            + (clearThreshold < 0.999f ? "　·　点亮 " + Mathf.RoundToInt(clearThreshold * 100f) + "% 即可通关" : "");
 
         CoverageChanged?.Invoke(board.Coverage, lit, playable);
     }
@@ -652,6 +666,18 @@ public class PuzzleController : EventRoomBase
         if (finished) return;
 
         if (Input.GetKeyDown(KeyCode.R)) { ResetPuzzle(); return; }
+
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            flipX = !flipX;
+            SetHint("镜像：" + Mirrors());
+        }
+
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            flipY = !flipY;
+            SetHint("镜像：" + Mirrors());
+        }
 
         if (allowDebugClear && Input.GetKeyDown(KeyCode.Tab))
         {

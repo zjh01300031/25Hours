@@ -41,7 +41,7 @@
   "10,8"
  ],
  "toggleCells": false,
- "clearThreshold": 1.0,
+ "clearThreshold": 0.89,
  "skills": [
   {
    "name": "四方",

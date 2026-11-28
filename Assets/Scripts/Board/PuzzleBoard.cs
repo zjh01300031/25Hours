@@ -102,8 +102,14 @@ public class PuzzleBoard
     /// </summary>
     public int Apply(PuzzleShape shape, Vector2Int anchor, bool toggle = true)
     {
+        return ApplyOffsets(PuzzleSkill.Offsets(shape), anchor, toggle);
+    }
+
+    /// <summary>按任意偏移表施放（控制器用它支持翻转镜像）。</summary>
+    public int ApplyOffsets(IList<Vector2Int> offsets, Vector2Int anchor, bool toggle = true)
+    {
         int changed = 0;
-        foreach (var offset in PuzzleSkill.Offsets(shape))
+        foreach (var offset in offsets)
         {
             int x = anchor.x + offset.x;
             int y = anchor.y + offset.y;
