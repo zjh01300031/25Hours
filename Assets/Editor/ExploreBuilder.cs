@@ -198,8 +198,9 @@ public static class ExploreBuilder
             var gate = gateGo.AddComponent<BoardGate>();
             gate.gateTitle = (titles != null && i < titles.Length) ? titles[i] : ("棋盘 " + (i + 1));
             gate.introText = "一座矮台，台面上有个凹槽，正好能嵌进一个人偶。";
-            gate.requiredItemId = "item_doll";
-            gate.requiredItemName = "人偶";
+            // 每块棋盘对应自己的人偶：item_doll_1 ~ item_doll_5
+            gate.requiredItemId = "item_doll_" + (i + 1);
+            gate.requiredItemName = "人偶 " + (i + 1);
             gate.boardScene = boardScenes[i];
             gate.triggerRadius = 1.8f;
         }

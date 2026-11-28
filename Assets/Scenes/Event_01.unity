@@ -722,8 +722,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gateTitle: "\u68CB\u76D8 4"
   introText: "\u4E00\u5EA7\u77EE\u53F0\uFF0C\u53F0\u9762\u4E0A\u6709\u4E2A\u51F9\u69FD\uFF0C\u6B63\u597D\u80FD\u5D4C\u8FDB\u4E00\u4E2A\u4EBA\u5076\u3002"
-  requiredItemId: item_doll
-  requiredItemName: "\u4EBA\u5076"
+  requiredItemId: item_doll_4
+  requiredItemName: "\u4EBA\u5076 4"
   boardScene: Board_04
   consumeItem: 1
   dollArts: []
@@ -1034,8 +1034,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gateTitle: "\u68CB\u76D8 1"
   introText: "\u4E00\u5EA7\u77EE\u53F0\uFF0C\u53F0\u9762\u4E0A\u6709\u4E2A\u51F9\u69FD\uFF0C\u6B63\u597D\u80FD\u5D4C\u8FDB\u4E00\u4E2A\u4EBA\u5076\u3002"
-  requiredItemId: item_doll
-  requiredItemName: "\u4EBA\u5076"
+  requiredItemId: item_doll_1
+  requiredItemName: "\u4EBA\u5076 1"
   boardScene: Board_01
   consumeItem: 1
   dollArts: []
@@ -2421,8 +2421,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gateTitle: "\u68CB\u76D8 3"
   introText: "\u4E00\u5EA7\u77EE\u53F0\uFF0C\u53F0\u9762\u4E0A\u6709\u4E2A\u51F9\u69FD\uFF0C\u6B63\u597D\u80FD\u5D4C\u8FDB\u4E00\u4E2A\u4EBA\u5076\u3002"
-  requiredItemId: item_doll
-  requiredItemName: "\u4EBA\u5076"
+  requiredItemId: item_doll_3
+  requiredItemName: "\u4EBA\u5076 3"
   boardScene: Board_03
   consumeItem: 1
   dollArts: []
@@ -3274,8 +3274,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gateTitle: "\u68CB\u76D8 5"
   introText: "\u4E00\u5EA7\u77EE\u53F0\uFF0C\u53F0\u9762\u4E0A\u6709\u4E2A\u51F9\u69FD\uFF0C\u6B63\u597D\u80FD\u5D4C\u8FDB\u4E00\u4E2A\u4EBA\u5076\u3002"
-  requiredItemId: item_doll
-  requiredItemName: "\u4EBA\u5076"
+  requiredItemId: item_doll_5
+  requiredItemName: "\u4EBA\u5076 5"
   boardScene: Board_05
   consumeItem: 1
   dollArts: []
@@ -3495,8 +3495,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gateTitle: "\u68CB\u76D8 2"
   introText: "\u4E00\u5EA7\u77EE\u53F0\uFF0C\u53F0\u9762\u4E0A\u6709\u4E2A\u51F9\u69FD\uFF0C\u6B63\u597D\u80FD\u5D4C\u8FDB\u4E00\u4E2A\u4EBA\u5076\u3002"
-  requiredItemId: item_doll
-  requiredItemName: "\u4EBA\u5076"
+  requiredItemId: item_doll_2
+  requiredItemName: "\u4EBA\u5076 2"
   boardScene: Board_02
   consumeItem: 1
   dollArts: []

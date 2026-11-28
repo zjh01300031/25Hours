@@ -240,9 +240,10 @@ public class BoardGate : MonoBehaviour
             return;
         }
 
-        if (picked.Key != requiredItemId)
+        if (!Match(picked.Key))
         {
-            Say("放上去又弹了出来 —— 得是「" + requiredItemName + "」");
+            Say("「" + GameProgress.Ensure().ItemName(picked.Key) + "」放不进去 —— 这块要的是「"
+                + requiredItemName + "」");
             return;
         }
 
@@ -264,6 +265,13 @@ public class BoardGate : MonoBehaviour
         if (consumeItem) GameProgress.Ensure().RemoveItem(requiredItemId, 1);
         Close("「" + requiredItemName + "」嵌了进去");
         PlayIntroThenGo();
+    }
+
+    /// <summary>这件物品能不能投进这块棋盘：调试人偶永远可以，其它必须和 requiredItemId 完全一致。</summary>
+    bool Match(string itemId)
+    {
+        if (itemId == DebugKey) return true;
+        return !string.IsNullOrEmpty(itemId) && itemId == requiredItemId;
     }
 
     void BuildUI()
@@ -321,6 +329,7 @@ public class BoardGate : MonoBehaviour
             for (int i = 0; i < items.Count; i++)
             {
                 sb.Append(i == cursor ? "▶ " : "   ");
+                sb.Append(Match(items[i].Key) ? "✔ " : "✘ ");
                 sb.Append(items[i].Key == DebugKey ? requiredItemName + "（调试用）" : GameProgress.Ensure().ItemName(items[i].Key));
                 sb.Append("  ×");
                 sb.Append(items[i].Value);
@@ -330,6 +339,6 @@ public class BoardGate : MonoBehaviour
         }
 
         if (hintText != null)
-            hintText.text = "W / S 选 · 空格 投进去 · Esc 离开（要投「" + requiredItemName + "」）";
+            hintText.text = "这块要的是「" + requiredItemName + "」　·　W / S 选 · 空格 投进去 · Esc 离开";
     }
 }
