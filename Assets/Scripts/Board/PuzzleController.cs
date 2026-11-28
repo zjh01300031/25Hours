@@ -88,7 +88,6 @@ public class PuzzleController : EventRoomBase
     readonly List<Text> skillChargeTexts = new List<Text>();
 
     Text coverageText;
-    Text actionText;
     Text hintText;
     Text winText;
     int[] initialCharges;
@@ -207,12 +206,8 @@ public class PuzzleController : EventRoomBase
         RuntimeUI.Panel(canvas.transform, "背景", new Vector2(4000f, 3000f), Vector2.zero, frameColor);
 
         // 不再画顶部大字标题（人偶名放在覆盖率那一行里）
-        // 行动次数单独一行，放在最显眼的位置（换方向走一步就扣 1 次）
-        actionText = RuntimeUI.Label(canvas.transform, "行动", "", 34,
-            TextAnchor.MiddleCenter, Color.white, font, new Vector2(1500f, 46f), new Vector2(0f, 470f));
-
         coverageText = RuntimeUI.Label(canvas.transform, "覆盖率", "", 26,
-            TextAnchor.MiddleCenter, accentColor, font, new Vector2(1200f, 44f), new Vector2(0f, 420f));
+            TextAnchor.MiddleCenter, accentColor, font, new Vector2(1200f, 44f), new Vector2(0f, 470f));
 
         // 棋盘
         var boardRoot = new GameObject("棋盘", typeof(RectTransform));
@@ -656,25 +651,17 @@ public class PuzzleController : EventRoomBase
             string who = string.IsNullOrEmpty(BoardSession.DollName) ? "" : BoardSession.DollName + "　·　";
             int left = moveLimit > 0 ? Mathf.Max(0, moveLimit - movesUsed) : -1;
 
-            if (actionText != null)
-            {
-                if (left >= 0)
-                {
-                    actionText.text = "行动 " + left + " / " + moveLimit;
-                    // 剩 2 次以内变黄，剩 0 变红：让人一眼知道快走不动了
-                    actionText.color = left <= 0 ? new Color(0.95f, 0.42f, 0.38f)
-                                     : left <= 2 ? new Color(0.96f, 0.80f, 0.42f)
-                                                 : Color.white;
-                }
-                else
-                {
-                    actionText.text = "行动 不限";
-                    actionText.color = new Color(0.72f, 0.76f, 0.82f);
-                }
-            }
+            string actionPart = left >= 0
+                ? "行动 " + left + " / " + moveLimit + "　·　"
+                : "行动 不限　·　";
 
-            coverageText.text = who + "点亮 " + lit + " / " + playable
+            coverageText.text = actionPart + who + "点亮 " + lit + " / " + playable
                 + (moveLimit <= 0 ? "　·　" + percent + "%" : "");
+
+            // 行动次数快用完时整行变色提醒
+            coverageText.color = left == 0 ? new Color(0.95f, 0.42f, 0.38f)
+                               : left > 0 && left <= 2 ? new Color(0.96f, 0.80f, 0.42f)
+                                                       : accentColor;
         }
 
         CoverageChanged?.Invoke(board.Coverage, lit, playable);

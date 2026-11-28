@@ -35,9 +35,7 @@ public static class BoardPreview
     static void Board(PuzzleController c, Font font, Transform root)
     {
         Panel(root, "背景", new Vector2(4000f, 3000f), Vector2.zero, c.frameColor);
-        string actionLine = c.MoveLimit > 0 ? "行动 " + c.MoveLimit + " / " + c.MoveLimit : "行动 不限";
-        Label(root, "行动", actionLine, 34, font, Color.white, new Vector2(1200f, 46f), new Vector2(0f, 470f));
-        Label(root, "覆盖率", "点亮 0 / " + (c.width * c.height) + " · 0%", 26, font, c.accentColor, new Vector2(1200f, 44f), new Vector2(0f, 420f));
+        Label(root, "覆盖率", "行动 " + (c.MoveLimit > 0 ? c.MoveLimit + " / " + c.MoveLimit : "不限") + "　·　点亮 0 / " + (c.width * c.height), 28, font, c.accentColor, new Vector2(1200f, 44f), new Vector2(0f, 470f));
 
         float step = c.cellSize + c.gap;
         var grid = new GameObject("格子系统", typeof(RectTransform));
