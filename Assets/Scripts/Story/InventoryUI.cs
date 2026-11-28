@@ -11,6 +11,16 @@ public class InventoryUI : MonoBehaviour
     public static bool IsOpen { get; private set; }
 
     [System.Serializable]
+    public class BoardLink
+    {
+        [Tooltip("背包里哪件物品")] public string itemId;
+        [Tooltip("用掉它以后进哪个棋盘场景（要已在 Build Settings）")] public string sceneName;
+        [Tooltip("提示文字，可留空")] public string label;
+    }
+
+    [Header("背包里对应能开棋盘的收集物")]
+    public BoardLink[] boards = new BoardLink[0];
+
     public class ItemUse
     {
         public string itemId = "";
@@ -170,6 +180,32 @@ public class InventoryUI : MonoBehaviour
         string id = ids[i];
         string name = names[i];
 
+        // 1) 先看是不是「能开棋盘的收集物」
+        if (boards != null)
+        {
+            for (int k = 0; k < boards.Length; k++)
+            {
+                var link = boards[k];
+                if (link == null || string.IsNullOrEmpty(link.itemId) || link.itemId != id) continue;
+                if (string.IsNullOrEmpty(link.sceneName)) continue;
+
+                if (!Application.CanStreamedLevelBeLoaded(link.sceneName))
+                {
+                    if (ShelterHUD.Instance != null)
+                        ShelterHUD.Instance.Toast("场景 " + link.sceneName + " 不在 Build Settings 里");
+                    return;
+                }
+
+                BoardSession.Set(id, name, null);
+                Close();
+                if (ShelterHUD.Instance != null)
+                    ShelterHUD.Instance.Toast(string.IsNullOrEmpty(link.label) ? "带着「" + name + "」进入棋盘…" : link.label);
+                SceneFade.FadeTo(link.sceneName, 0.45f, 0.3f, 0.85f);
+                return;
+            }
+        }
+
+        // 2) 普通物品：显示 ItemUse 里写好的话
         string text = null;
         if (uses != null)
         {

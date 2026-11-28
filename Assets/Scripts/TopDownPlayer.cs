@@ -32,6 +32,16 @@ public class TopDownPlayer : MonoBehaviour
         if (spriteRenderer != null) basePos = spriteRenderer.transform.localPosition;
     }
 
+    static Vector2 ReadInput()
+    {
+        float x = 0f, y = 0f;
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) x -= 1f;
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) x += 1f;
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) y -= 1f;
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) y += 1f;
+        return new Vector2(x, y);
+    }
+
     void Update()
     {
         input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));

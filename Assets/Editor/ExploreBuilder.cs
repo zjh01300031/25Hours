@@ -79,24 +79,52 @@ public static class ExploreBuilder
         var head = new GameObject("GameProgress", typeof(GameProgress));
         var boot = new GameObject("AppBoot", typeof(AppBoot));
 
-        // 地面（纯装饰，不加碰撞，只让画面不是全黑）
-        var floor = new GameObject("地面");
-        var floorSr = floor.AddComponent<SpriteRenderer>();
-        floorSr.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        floorSr.drawMode = SpriteDrawMode.Sliced;
-        floorSr.size = new Vector2(30f, 16f);
-        floorSr.color = new Color(0.17f, 0.18f, 0.21f, 1f);
-        floorSr.sortingOrder = -10;
+        // 背景（一整块暗色，铺满视野）
+        var bg = new GameObject("背景");
+        var bgSr = bg.AddComponent<SpriteRenderer>();
+        bgSr.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        bgSr.drawMode = SpriteDrawMode.Sliced;
+        bgSr.size = new Vector2(40f, 22f);
+        bgSr.color = new Color(0.11f, 0.12f, 0.14f, 1f);
+        bgSr.sortingOrder = -20;
 
-        // 四面墙（碰撞）
-        Wall("墙_左", new Vector2(-11f, 0f), new Vector2(0.6f, 16f));
-        Wall("墙_右", new Vector2(11f, 0f), new Vector2(0.6f, 16f));
-        Wall("墙_上", new Vector2(0f, 6f), new Vector2(22f, 0.6f));
-        Wall("墙_下", new Vector2(0f, -6f), new Vector2(22f, 0.6f));
+        // 地板：一格一格的瓷砖，从 x=-11 铺到 11，站在上面走
+        Box2D floorCol = new Box2D(new Vector2(0f, -3.5f), new Vector2(22f, 1f));
+        Wall("地板碰撞", floorCol.center, floorCol.size);
 
-        // 玩家
+        const float Tile = 1f;
+        int count = 22;
+        for (int i = 0; i < count; i++)
+        {
+            var tile = new GameObject("地砖_" + i);
+            tile.transform.position = new Vector3(-11f + Tile * 0.5f + i * Tile, -3.5f, 0f);
+            var tsr = tile.AddComponent<SpriteRenderer>();
+            tsr.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            tsr.drawMode = SpriteDrawMode.Sliced;
+            tsr.size = new Vector2(Tile * 0.97f, 0.92f);
+            tsr.color = (i % 2 == 0) ? new Color(0.28f, 0.30f, 0.34f, 1f) : new Color(0.24f, 0.26f, 0.30f, 1f);
+            tsr.sortingOrder = -10;
+        }
+
+        // 地板下的裙板，让画面有厚度
+        var skirt = new GameObject("地板裙板");
+        var skirtSr = skirt.AddComponent<SpriteRenderer>();
+        skirtSr.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        skirtSr.drawMode = SpriteDrawMode.Sliced;
+        skirtSr.size = new Vector2(22f, 0.5f);
+        skirtSr.color = new Color(0.16f, 0.17f, 0.20f, 1f);
+        skirtSr.sortingOrder = -11;
+        skirt.transform.position = new Vector3(0f, -4.25f, 0f);
+
+        // 四面墙（碰撞）：左右到地板，上面封顶，下面兜底
+        Wall("墙_左", new Vector2(-11.2f, 1.5f), new Vector2(0.5f, 11f));
+        Wall("墙_右", new Vector2(11.2f, 1.5f), new Vector2(0.5f, 11f));
+        Wall("墙_上", new Vector2(0f, 7f), new Vector2(23f, 0.5f));
+        Wall("墙_下", new Vector2(0f, -5f), new Vector2(23f, 0.5f));
+
+        // 玩家：站在地板上（地板顶面 y = -3）
         var player = new GameObject("玩家_俯视", typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(TopDownPlayer));
-        player.transform.position = new Vector3(0f, -3f, 0f);
+        player.transform.position = new Vector3(0f, -2.68f, 0f);
         var rb = player.GetComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
@@ -116,7 +144,7 @@ public static class ExploreBuilder
         rig.useBounds = false;
 
         // 三个棋盘入口
-        var positions = new[] { new Vector3(-6f, 1f, 0f), new Vector3(0f, 3f, 0f), new Vector3(6f, 1f, 0f) };
+        var positions = new[] { new Vector3(-6f, -2.1f, 0f), new Vector3(0f, -2.1f, 0f), new Vector3(6f, -2.1f, 0f) };
         var titles = new[] { "第一个棋盘", "第二个棋盘", "第三个棋盘" };
 
         for (int i = 0; i < boardScenes.Length && i < positions.Length; i++)
@@ -145,6 +173,17 @@ public static class ExploreBuilder
             gate.triggerRadius = 1.8f;
         }
 
+        // 背包：Q 打开，里面用「对应的收集物」直接开棋盘
+        var bagGo = new GameObject("背包", typeof(InventoryUI));
+        var bag = bagGo.GetComponent<InventoryUI>();
+        bag.font = AssetDatabase.LoadAssetAtPath<Font>(FontPath);
+        bag.boards = new[]
+        {
+            new InventoryUI.BoardLink { itemId = "item_01", sceneName = "Board_01", label = "带着它走进第一块棋盘…" },
+            new InventoryUI.BoardLink { itemId = "item_02", sceneName = "Board_02", label = "带着它走进第二块棋盘…" },
+            new InventoryUI.BoardLink { itemId = "item_03", sceneName = "Board_03", label = "带着它走进第三块棋盘…" },
+        };
+
         // 收尾：三块棋盘都打完就回第 0 层
         var flowGo = new GameObject("收尾", typeof(LevelFlow));
         var flow = flowGo.GetComponent<LevelFlow>();
@@ -159,12 +198,33 @@ public static class ExploreBuilder
         EditorSceneManager.SaveScene(scene, SceneDir + "/Event_01.unity");
     }
 
+    struct Box2D
+    {
+        public Vector2 center;
+        public Vector2 size;
+        public Box2D(Vector2 c, Vector2 s) { center = c; size = s; }
+    }
+
     static void Wall(string name, Vector2 center, Vector2 size)
     {
         var go = new GameObject(name, typeof(BoxCollider2D));
         go.transform.position = center;
         go.GetComponent<BoxCollider2D>().size = size;
         go.layer = LayerMask.NameToLayer("Ground");
+    }
+
+    [InitializeOnLoadMethod]
+    static void AutoRunIfRequested()
+    {
+        const string flag = "Temp/explore-build.flag";
+        if (!System.IO.File.Exists(flag)) return;
+        if (EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode) return;
+        System.IO.File.Delete(flag);
+        EditorApplication.delayCall += () =>
+        {
+            BuildAll();
+            Debug.Log("[探索区] flag 触发的重建完成");
+        };
     }
 
     static void SetupBuildSettings()
