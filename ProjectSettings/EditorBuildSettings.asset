@@ -12,8 +12,14 @@ EditorBuildSettings:
     path: Assets/Scenes/Shelter_L0.unity
     guid: cb20f5000f7cce34193f8f4c31e7c440
   - enabled: 1
+    path: Assets/Scenes/Shelter_2F.unity
+    guid: ee84ec6ede8a5a947a5d9c0b34fb48d1
+  - enabled: 1
     path: Assets/Scenes/Event_01.unity
     guid: b9c55493b11cd6244be66de9f7feb40d
+  - enabled: 1
+    path: Assets/Scenes/Event_02.unity
+    guid: 06637a78971e22a4d805f1059bdf92de
   - enabled: 1
     path: Assets/Scenes/Board_01.unity
     guid: 48bbfbf6d7968e145bd98ceab772531e
@@ -29,7 +35,4 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Board_05.unity
     guid: 9d8ca70c6409e2e4bad4103378a6364b
-  - enabled: 1
-    path: Assets/Scenes/Event_02.unity
-    guid: 06637a78971e22a4d805f1059bdf92de
   m_configObjects: {}

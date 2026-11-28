@@ -116,6 +116,15 @@ public class ShelterPlayer : MonoBehaviour
 
     void Start()
     {
+        // 换房间过来的：站到到达点旁边
+        Vector3 portalPos;
+        if (RoomSpawn.Consume(out portalPos))
+        {
+            transform.position = portalPos;
+            if (rb != null) rb.position = portalPos;
+            return;
+        }
+
         // 从事件场景回来时，回到离开的位置
         if (ShelterFlow.HasReturnPoint)
         {

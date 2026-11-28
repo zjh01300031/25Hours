@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,6 +36,9 @@ public class ChoiceNpc : InteractableBase
 
     [Tooltip("界面用的字体（一般不用改）")]
     public Font font;
+
+    [Tooltip("说完话之后，屏幕中间出的那行大字（留空不出）")]
+    public string afterTalkHint = "";
 
     public override void Interact(ShelterPlayer player)
     {

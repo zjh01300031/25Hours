@@ -29,6 +29,16 @@ public class TopDownPlayer : MonoBehaviour
 
     void Start()
     {
+        // 换房间过来的：站到到达点旁边
+        Vector3 portalPos;
+        if (RoomSpawn.Consume(out portalPos))
+        {
+            transform.position = portalPos;
+            var body0 = GetComponent<Rigidbody2D>();
+            if (body0 != null) body0.position = portalPos;
+            return;
+        }
+
         // 从棋盘回来时，站在进门前的位置（而不是场景出生点）
         Vector3 back;
         if (BoardSession.ConsumeReturn(out back))
